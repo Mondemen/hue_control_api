@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+	<head>
+
+	</head>
+	<body>
+		<canvas width="600" height="600"></canvas>
+		<script>
+			function rgbToXy(red, green, blue, gamut)
+			{
+				let x, y, z;
+				let xy;
+				let closest;
+				let getGammaCorrectedValue = value => (value > 0.04045) ? Math.pow((value + 0.055) / (1.0 + 0.055), 2.4) : (value / 12.92);
+
+				red = getGammaCorrectedValue(parseFloat(red / 255));
+				green = getGammaCorrectedValue(parseFloat(green / 255));
+				blue = getGammaCorrectedValue(parseFloat(blue / 255));
+				x = red * 0.664511 + green * 0.154324 + blue * 0.162028;
+				y = red * 0.283881 + green * 0.668433 + blue * 0.047685;
+				z = red * 0.000088 + green * 0.072310 + blue * 0.986039;
+				xy = {x: x / (x + y + z), y: y / (x + y + z)};
+				if (gamut && !xyIsInGamutRange(xy, gamut))
+				{
+					closest = getClosestColor(xy, gamut);
+					x = closest.x;
+					y = closest.y;
+				}
+				return ({...xy, brightness: y});
+			}
+			function xyIsInGamutRange(xy, gamut)
+			{
+				let v0, v1, v2;
+				let dot00, dot01, dot02, dot11, dot12;
+				let invDenom;
+				let u, v;
+
+				if (Array.isArray(xy))
+					xy = {x: xy[0], y: xy[1]};
+				v0 = {x: gamut.blue.x - gamut.red.x, y: gamut.blue.y - gamut.red.y};
+				v1 = {x: gamut.green.x - gamut.red.x, y: gamut.green.y - gamut.red.y};
+				v2 = {x: xy.x - gamut.red.x, y: xy.y - gamut.red.y};
+				dot00 = (v0.x * v0.x) + (v0.y * v0.y);
+				dot01 = (v0.x * v1.x) + (v0.y * v1.y);
+				dot02 = (v0.x * v2.x) + (v0.y * v2.y);
+				dot11 = (v1.x * v1.x) + (v1.y * v1.y);
+				dot12 = (v1.x * v2.x) + (v1.y * v2.y);
+				invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+				u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+				v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+				return ((u >= 0) && (v >= 0) && (u + v < 1));
+			}
+
+			function getClosestColor(xy, gamut)
+			{
+				let greenBlue, greenRed, blueRed;
+				let closestColorPoints;
+				let distance;
+				let closestDistance;
+				let closestColor;
+				let getLineDistance = (pointA, pointB) => Math.hypot(pointB.x - pointA.x, pointB.y - pointA.y);
+				let getClosestPoint = (xy, pointA, pointB)  =>
+				{
+					let xy2a = {x: xy.x - pointA.x, y: xy.y - pointA.y};
+					let a2b = {x: pointB.x - pointA.x, y: pointB.y - pointA.y};
+					let a2bSqr = Math.pow(a2b.x, 2) + Math.pow(a2b.y, 2);
+					let xy2a_dot_a2b = xy2a.x * a2b.x + xy2a.y * a2b.y;
+					let t = xy2a_dot_a2b /a2bSqr;
+
+					return ({x: pointA.x + a2b.x * t, y: pointA.y + a2b.y * t});
+				}
+
+				greenBlue = {a: gamut.green, b: gamut.blue};
+				greenRed = {a: gamut.green, b: gamut.red};
+				blueRed = {a: gamut.red, b: gamut.blue};
+
+				closestColorPoints =
+				{
+					greenBlue : getClosestPoint(xy, greenBlue.a, greenBlue.b),
+					greenRed : getClosestPoint(xy, greenRed.a, greenRed.b),
+					blueRed : getClosestPoint(xy, blueRed.a, blueRed.b)
+				};
+				distance =
+				{
+					greenBlue : getLineDistance(xy, closestColorPoints.greenBlue),
+					greenRed : getLineDistance(xy, closestColorPoints.greenRed),
+					blueRed : getLineDistance(xy, closestColorPoints.blueRed)
+				};
+				for (let i in distance)
+				{
+					if (distance.hasOwnProperty(i))
+					{
+						if (!closestDistance)
+						{
+							closestDistance = distance[i];
+							closestColor = i;
+						}
+						if (closestDistance > distance[i])
+						{
+							closestDistance = distance[i];
+							closestColor = i;
+						}
+					}
+				}
+				return  (closestColorPoints[closestColor]);
+			}
+
+			function xyBriToRgb(x, y, brightness = 1, gamut)
+			{
+				let X, Y, Z;
+				let z;
+				let r, g, b;
+				let red, green, blue;
+				let getReversedGammaCorrectedValue = value => (value <= 0.0031308) ? 12.92 * value : (1.0 + 0.055) * Math.pow(value, (1.0 / 2.4)) - 0.055;
+				let closest;
+
+				if (gamut && !xyIsInGamutRange({x, y}, gamut))
+				{
+					closest = getClosestColor({x, y}, gamut);
+					x = closest.x;
+					y = closest.y;
+				}
+				z = 1.0 - x - y;
+				Y = brightness;
+				X = (Y / y) * x;
+				Z = (Y / y) * z;
+				r = X * 1.656492 - Y * 0.354851 - Z * 0.255038;
+				g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152;
+				b = X * 0.051713 - Y * 0.121364 + Z * 1.011530;
+				r = getReversedGammaCorrectedValue(r);
+				g = getReversedGammaCorrectedValue(g);
+				b = getReversedGammaCorrectedValue(b);
+				// console.log(r, g, b);
+				red = Math.abs(Math.min(Math.round(r * 255), 255));
+				green = Math.abs(Math.min(Math.round(g * 255), 255));
+				blue = Math.abs(Math.min(Math.round(b * 255), 255));
+				return ({r: red, g: green, b: blue});
+			}
+
+
+
+			function HSVtoRGB(h, s, v)
+			{
+				var r, g, b, i, f, p, q, t;
+
+				h /= 360;
+				s /= 100;
+				v /= 100;
+				i = Math.floor(h * 6);
+				f = h * 6 - i;
+				p = v * (1 - s);
+				q = v * (1 - f * s);
+				t = v * (1 - (1 - f) * s);
+				switch (i % 6)
+				{
+					case 0: r = v, g = t, b = p; break;
+					case 1: r = q, g = v, b = p; break;
+					case 2: r = p, g = v, b = t; break;
+					case 3: r = p, g = q, b = v; break;
+					case 4: r = t, g = p, b = v; break;
+					case 5: r = v, g = p, b = q; break;
+				}
+				return {
+					r: Math.round(r * 255),
+					g: Math.round(g * 255),
+					b: Math.round(b * 255)
+				};
+			}
+
+			function setPixel(image, x, y, color)
+			{
+				var off = (y * image.width + x) * 4;
+
+				image.data[off] = color.r;
+				image.data[off + 1] = color.g;
+				image.data[off + 2] = color.b;
+				image.data[off + 3] = color.a ?? 255;
+			}
+
+			function drawCircle(x, y, radius, image, gamut)
+			{
+				let r2 = Math.pow(radius, 2);
+				let area = r2 << 2;
+				let rr = radius << 1;
+				let angle, distance, rgb, xyz;
+
+				for (var i = 0; i < area; i++)
+				{
+					let tx = (i % rr) - radius;
+					let ty = (i / rr) - radius;
+
+					if (Math.pow(tx, 2) + Math.pow(ty, 2) <= r2)
+					{
+						angle = Math.atan2(ty, tx) * 180 / Math.PI + 180;
+						distance = Math.sqrt(Math.pow(tx, 2) + Math.pow(ty, 2));
+
+						rgb = HSVtoRGB(~~angle + 270, distance / radius * 100, brightness);
+						xyz = rgbToXy(rgb.r, rgb.g, rgb.b);
+						rgb = xyBriToRgb(xyz.x, xyz.y, xyz.brightness, gamut);
+						setPixel(image, ~~(x + tx), ~~(y + ty), {...rgb, a: ((distance >= radius - 1) ? radius - distance : 1) * 255});
+					}
+				}
+			}
+
+			function drawHueCircle(x, y, radius, context)
+			{
+				let start = Math.PI,
+    			end = start + Math.PI * 2,
+				step = Math.PI / (380),
+				ang = 0,
+				grad, rgb;
+
+				// let gamut = {red: {x: 0.692, y: 0.308}, green: {x: 0.17, y: 0.7}, blue: {x: 0.153, y: 0.048}};
+				let gamut = {red: {x: 0.704, y: 0.296}, green: {x: 0.2151, y: 0.7106}, blue: {x: 0.138, y: 0.08}};
+
+				console.log(1 / (radius / 50));
+				context.translate(x, y);
+
+				for (ang = start; ang <= end; ang += step)
+				{
+					context.save();
+					context.rotate(-ang);
+					grad = context.createLinearGradient(0, 0, 0, radius);
+
+					for (let i = 0; i <= 1; i += 1 / (radius / (radius / 2)))
+					{
+						rgb = HSVtoRGB(~~(360 - (ang - start) / (end - start) * 360), i * 100, 100);
+						xyz = rgbToXy(rgb.r, rgb.g, rgb.b);
+						rgb = xyBriToRgb(xyz.x, xyz.y, xyz.brightness, gamut);
+						grad.addColorStop(i, `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
+					}
+
+					// console.log(360-(ang-start)/(end-start));
+					// rgb = HSVtoRGB(~~(360 - (ang - start) / (end - start) * 360), 100, 100);
+					// grad.addColorStop(1, `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
+					// // grad.addColorStop(1, `red`);
+					context.fillStyle = grad;
+
+					context.fillRect(0, 0, ~~(step * 400), radius);
+					context.restore();
+				}
+
+				//Knockout
+				// context.beginPath();
+				// context.arc(x, y, 0, 0, 2 * Math.PI);
+				// context.fillStyle = '#f1f1f1';
+				// context.fill();
+
+				// let thickness = radius,
+				// p = {
+				// 	x: x,
+				// 	y: y
+				// },
+				// start = Math.PI,
+				// end = start + Math.PI * 2,
+				// step = Math.PI / 360,
+				// ang = 0,
+				// grad,
+				// r = 0,
+				// g = 0,
+				// b = 0,
+				// pct = 0;
+
+				// console.time("time");
+				// ctx.translate(p.x, p.y);
+
+				// for (ang = start; ang <= end; ang += step) {
+				// 	ctx.save();
+				// 	ctx.rotate(-ang);
+				// 	grad = ctx.createLinearGradient(0, 0, 0, radius);
+				// 	grad.addColorStop(0, 'white');
+
+				// 	h = 360-(ang-start)/(end-start) * 360;
+				// 	s = '100%';
+				// 	l = '50%';
+				// 	// console.log(h);
+					
+				// 	grad.addColorStop(1, 'hsl('+[h,s,l].join()+')');
+				// 	ctx.fillStyle = grad;
+
+				// 	ctx.fillRect(0, 0, 3, radius);
+				// 	ctx.restore();
+				// }
+
+				// //Knockout
+				// ctx.beginPath();
+				// ctx.arc(p.x, p.y, 0, 0, 2 * Math.PI);
+				// //ctx.fillStyle = '#f1f1f1';
+				// ctx.fill();
+			}
+
+			var canvas = document.querySelector('canvas');
+			var ctx = canvas.getContext('2d');
+			
+			// ctx.fillStyle = 'white';
+			// ctx.fillRect(0, 0, 300, 300);
+
+			let brightness = 100;
+			// setInterval(() =>
+			// {
+				console.time("draw");
+				drawHueCircle(300, 300, 300, ctx);
+				// ctx.putImageData(image, 0, 0);
+				console.timeEnd("draw");
+			// }, 100)
+		</script>
+	</body>
+</html>
