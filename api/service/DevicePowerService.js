@@ -35,7 +35,7 @@ export default class DevicePowerService extends Service
 	/**
 	 * Gets the battery state
 	 * 
-	 * @returns {DevicePowerService.BatteryState} The battery state
+	 * @returns {DevicePowerService.BatteryState[keyof typeof DevicePowerService.BatteryState]} The battery state
 	 */
 	getBatteryState()
 	{return (this._data.battery_state)}

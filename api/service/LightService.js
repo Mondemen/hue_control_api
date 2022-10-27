@@ -1,154 +1,82 @@
 import Service from "./Service.js";
 import Mired from "../../lib/Mired.js"
 import Color from "../../lib/Color.js"
-import ArgumentError from "../../lib/error/ArgumentError.js";
+import LightData from "../../lib/LightData.js";
 import { checkParam } from "../../utils/index.js";
+
+/**
+ * @typedef {import("../../lib/Color.js").ColorValue} ColorValue
+ * @typedef {import("../../lib/LightData.js").Effect} Effect
+ */
 
 export default class LightService extends Service
 {
-	/**
-	 * Capabilities of light
-	 * 
-	 * @enum {string}
-	 * @readonly
-	 */
-	static Capabilities =
-	{
-		STATE: "state",
-		DIMMING: "dimming",
-		COLOR_TEMPERATURE: "color_temperature",
-		COLOR: "color"
-	}
-	/**
-	 * State of light
-	 * 
-	 * @enum {boolean}
-	 * @readonly
-	 */
-	static State =
-	{
-		ON: true,
-		OFF: false
-	}
+	static Capabilities = LightData.Capabilities;
+	static State = LightData.State;
+	static Mode = LightData.Mode;
+	static AlertType = LightData.AlertType;
+	static DynamicStatus = LightData.DynamicStatus;
+	static Effect = LightData.Effect;
 
-	/**
-	 * Mode of light
-	 * 
-	 * @enum {string}
-	 * @readonly
-	 */
-	static Mode =
-	{
-		NORMAL: "normal",
-		STREAMING: "streaming"
-	}
-
-	/**
-	 * Type of alert for light
-	 * 
-	 * @enum {string}
-	 * @readonly
-	 */
-	static AlertType =
-	{
-		ONE_BREATHE: "select",
-		BREATHE: "breathe",
-		NONE: "none"
-	}
-
-	/**
-	 * The unit of color
-	 * 
-	 * @enum {string}
-	 * @readonly
-	 */
-	static ColorTemperatureUnit =
-	{
-		MIRED: "mired",
-		KELVIN: "kelvin",
-		RGB: "rgb",
-		HEX: "hex"
-	}
-
-	/**
-	 * The unit of color
-	 * 
-	 * @enum {string}
-	 * @readonly
-	 */
-	static ColorUnit =
-	{
-		RGB: "rgb",
-		HEX: "hex",
-		XY: "xy"
-	}
-
-	/**
-	 * The dynamic status
-	 * 
-	 * @enum {string}
-	 * @readonly
-	 */
-	static DynamicStatus =
-	{
-		DYNAMIC_PALETTE: "dynamic_palette",
-		NONE: "none"
-	}
+	/** @type {Set<LightService.Capabilities>} */
+	_capabilities = new Set();
 
 	constructor(bridge, data)
 	{
 		super(bridge, data);
 	}
 
-	_setData(data, update = false)
+	_setData(data)
 	{
-		let color, brightness;
-		super._setData(data, update);
-		this._data.name = data?.metadata?.name ?? this._data.name;
-		this._data.archetype = data?.metadata?.archetype ?? this._data.archetype;
-		if (!update)
-		{
-			this._capabilities = [];
-			if (data?.on)
-				this._capabilities.push(LightService.Capabilities.STATE);
-			if (data?.dimming)
-				this._capabilities.push(LightService.Capabilities.DIMMING);
-			if (data?.color_temperature)
-				this._capabilities.push(LightService.Capabilities.COLOR_TEMPERATURE);
-			if (data?.color)
-				this._capabilities.push(LightService.Capabilities.COLOR);
-		}
+		let effect;
 
+		super._setData(data);
+		if (data?.on)
+			this._capabilities.add(LightService.Capabilities.STATE);
+		if (data?.dimming)
+			this._capabilities.add(LightService.Capabilities.DIMMING);
+		if (data?.color_temperature)
+			this._capabilities.add(LightService.Capabilities.COLOR_TEMPERATURE);
+		if (data?.color)
+			this._capabilities.add(LightService.Capabilities.COLOR);
+		if (data?.gradient)
+			this._capabilities.add(LightService.Capabilities.GRADIENT);
+		if (data?.effects)
+			this._capabilities.add(LightService.Capabilities.EFFECT);
+		if (data?.timed_effects)
+			this._capabilities.add(LightService.Capabilities.TIMED_EFFECT);
 		if (data?.mode)
-			this.emit("mode", this._data.mode = data.mode)
+		{
+			this._data.mode = data.mode;
+			this.emit("mode", this.getMode());
+		}
 		if (data?.on?.on != undefined && this._data.state != data?.on?.on)
 			this.emit("state", this._data.state = data.on.on);
 		if (data?.dimming?.min_dim_level != undefined && this._data.minBrightness != +data.dimming.min_dim_level.toFixed(2))
 			this._data.minBrightness = +data.dimming.min_dim_level.toFixed(2);
 		if (data?.dimming?.brightness != undefined && this._data.brightness != +Math.max(data.dimming.brightness, this.getMinBrightness()).toFixed(2))
-		{
 			this.emit("brightness", this._data.brightness = +Math.max(data.dimming.brightness, this.getMinBrightness()).toFixed(2));
-			brightness = true;
-		}
-		if (data?.color_temperature?.mirek != undefined && this._data.colorTemperature != data?.color_temperature?.mirek)
-		{
-			this.emit("color_temperature", this._data.colorTemperature = data.color_temperature.mirek);
-			color = true;
-		}
+		if (data?.color_temperature?.mirek == null)
+			this._data.colorTemperature = null;
+		else if (data?.color_temperature?.mirek != undefined && this._data.colorTemperature != data?.color_temperature?.mirek)
+			this.emit("color_temperature", new Mired(this._data.colorTemperature = data.color_temperature.mirek));
 		this._data.minColorTemperature = data?.color_temperature?.mirek_schema?.mirek_minimum ?? this._data.minColorTemperature;
 		this._data.maxColorTemperature = data?.color_temperature?.mirek_schema?.mirek_maximum ?? this._data.maxColorTemperature;
+		this._data.colorGamut = data?.color?.gamut ?? this._data.colorGamut;
 		if (data?.color?.xy && (this._data.color?.x != data?.color?.xy?.x || this._data.color?.y != data?.color?.xy?.y))
 		{
-			this.emit("color", this._data.color = data.color.xy);
-			color = true;
+			this._data.color = data.color.xy;
+			this.emit("color", this.getColor());
 		}
-		if (brightness || color)
-			this.emit("real_color", {...this._data.color, brightness: (this._data.brightness ?? 0) / 100})
-		this._data.colorGamut = data?.color?.gamut ?? this._data.colorGamut;
 		if (data?.dynamics?.speed != undefined && this._data.dynamicSpeed != data?.dynamics?.speed)
 			this.emit("dynamic_speed", this._data.dynamicSpeed = data.dynamics.speed);
 		if (data?.dynamics?.status != undefined && this._data.dynamicStatus != data?.dynamics?.status)
 			this.emit("dynamic_status", this._data.dynamicStatus = data.dynamics.status);
+		effect = data?.effects?.status ?? data?.effects?.effect;
+		if (effect != undefined && this._data.effect != effect)
+			this.emit("effect", this._data.effect = effect);
+		if (Array.isArray(data?.effects?.status_values) && this._data.effectList != data?.effects?.status_values)
+			this.emit("effect_list", this._data.effectList = [...data?.effects?.status_values]);
 	}
 
 	getName()
@@ -157,7 +85,7 @@ export default class LightService extends Service
 	/**
 	 * Gets the list of capabilities
 	 * 
-	 * @returns {LightService.Capabilities[]} The list of capabilities
+	 * @returns {Set<LightService.Capabilities>} The list of capabilities
 	 */
 	getCapabilities()
 	{return (this._capabilities)}
@@ -168,19 +96,23 @@ export default class LightService extends Service
 	 * @returns {LightService.State} The state of light
 	 */
 	getState()
-	{return (this._data.state)}
+	{return (this._update.on?.on ?? this._data.state)}
 
 	/**
 	 * Set state of light
 	 * 
-	 * @param {LightService.State} state The state
+	 * @param {LightService.State[keyof typeof LightService.State]} state The state
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
 	setState(state, sender = this)
 	{
-		this._update.on = {on: state};
-		if (this._prepareUpdate)
+		checkParam(this, "setState", "state", state, "boolean");
+		LightData.setState(this._update, state);
+		if (sender._prepareUpdate)
+		{
+			sender._updatedService[this.getID()] = this;
 			return (sender);
+		}
 		return (this.update());
 	}
 	
@@ -198,9 +130,7 @@ export default class LightService extends Service
 	 * @returns {number} The brightness of light
 	 */
 	getBrightness()
-	{
-		return (Math.max(this._data.brightness ?? 100, this.getMinBrightness()))
-	}
+	{return (Math.max(this._update.dimming?.brightness ?? this._data.brightness ?? 100, this.getMinBrightness()))}
 
 	/**
 	 * Set brightness of light
@@ -213,127 +143,95 @@ export default class LightService extends Service
 		checkParam(this, "setBrightness", "brightness", brightness, "number");
 		brightness = Math.max(brightness, this.getMinBrightness());
 		if (brightness < 0 || brightness > 100)
-			console.warn(`${this.constructor.name}.setBrightness(): Brightness '${brightness}' is out of range (0 <= value <= 100), sets to ${Math.min(Math.max(value, 0), 100)}`);
-		this._update.dimming = {brightness};
-		if (this._prepareUpdate)
+			console.warn(`${sender.constructor.name}.setBrightness(): Brightness '${brightness}' is out of range (0 <= value <= 100), sets to ${Math.min(Math.max(value, 0), 100)}`);
+		LightData.setBrightness(this._update, brightness);
+		if (sender._prepareUpdate)
+		{
+			sender._updatedService[this.getID()] = this;
 			return (sender);
+		}
 		return (this.update());
 	}
 
 	/**
-	 * Gets the color temperature of light
+	 * Gets the minimal color temperature of light
 	 * 
-	 * @param {Serviceight.ColorTemperatureUnit} [unit=LightService.ColorTemperatureUnit.MIRED] The color temperature unit, default to LightService.ColorTemperatureUnit.MIRED
-	 * @returns {number|{r: number, g: number, b: number}} Returns the color temperture in unit defined in parameter
+	 * @returns {Mired} Returns the minimal color temperture
 	 * @throws {ArgumentError}
 	 */
-	getColorTemperature(unit = LightService.ColorTemperatureUnit.MIRED)
-	{
-		checkParam(this, "getColorTemperature", "unit", unit, LightService.ColorTemperatureUnit, "LightService.ColorTemperatureUnit");
-		if (unit == LightService.ColorTemperatureUnit.MIRED)
-			return (this._data.colorTemperature);
-		if (unit == LightService.ColorTemperatureUnit.KELVIN)
-			return (Mired.miredToKelvin(this._data.colorTemperature));
-		if (unit == LightService.ColorTemperatureUnit.RGB)
-			return (Mired.miredToRGB(this._data.colorTemperature));
-	}
+	getMinColorTemperature()
+	{return (new Mired(this._data.minColorTemperature))}
+
+	/**
+	 * Gets the maximal color temperature of light
+	 * 
+	 * @returns {Mired} Returns the maximal color temperture
+	 * @throws {ArgumentError}
+	 */
+	getMaxColorTemperature()
+	{return (new Mired(this._data.maxColorTemperature))}
+
+	/**
+	 * Gets the color temperature of light
+	 * 
+	 * @returns {Mired} Returns The color temperture
+	 * @throws {ArgumentError}
+	 */
+	getColorTemperature()
+	{return (new Mired(this._update.color_temperature?.mirek ?? this._data.colorTemperature ?? this.getColor()))}
 
 	/**
 	 * Sets the color temperature of light
 	 * 
-	 * @param {number|{r: number, g: number, b: number}} value the color temperture in unit defined in parameter
-	 * @param {LightService.ColorTemperatureUnit} [unit=LightService.ColorTemperatureUnit.MIRED] The color temperature unit, default to LightService.ColorTemperatureUnit.MIRED
+	 * @param {Mired|Color|ColorValue|number} mired The color temperature
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
 	 */
-	setColorTemperature(value, unit = LightService.ColorTemperatureUnit.MIRED, sender = this)
+	setColorTemperature(mired, sender = this)
 	{
-		checkParam(this, "setColorTemperature", "value", value, "number");
-		checkParam(this, "setColorTemperature", "unit", unit, LightService.ColorTemperatureUnit, "LightService.ColorTemperatureUnit");
-		if (unit == LightService.ColorTemperatureUnit.KELVIN)
-			value = Mired.kelvinToMired(value);
-		else if (unit == LightService.ColorTemperatureUnit.RGB)
-			value = Mired.RGBToMired(value);
-		this._update.color_temperature = {mirek: value};
-		if (this._prepareUpdate)
+		checkParam(this, "setColorTemperature", "mired", mired, [Mired, Color, "number", "string", "object"]);
+		LightData.setColorTemperature(this._update, mired);
+		if (sender._prepareUpdate)
+		{
+			sender._updatedService[this.getID()] = this;
 			return (sender);
+		}
 		return (this.update());
 	}
+
+	getColorGamut()
+	{return (this._data.colorGamut)}
 
 	/**
 	 * Gets the color temperature of light
 	 * 
-	 * @param {Serviceight.ColorUnit} [unit=LightService.ColorUnit.RGB] The colorunit, default to LightService.ColorUnit.RGB
-	 * @returns {number|{r: number, g: number, b: number}} Returns the color in unit defined in parameter
-	 * @throws {ArgumentError}
+	 * @returns {Color} Returns the color
 	 */
-	getColor(unit)
+	getColor()
 	{
-		checkParam(this, "getColor", "unit", unit, LightService.ColorUnit, "LightService.ColorUnit");
-		if (unit == LightService.ColorUnit.RGB)
-			return (Color.xyBriToRgb(this._data.color.x, this._data.color.y, 1));
-		if (unit == LightService.ColorUnit.HEX)
-			return (Color.xyBriToHex(this._data.color.x, this._data.color.y, 1));
-		if (unit == LightService.ColorUnit.XY)
-			return (this._data.color);
-	}
+		let color = this._update.color?.xy ?? this._data.color
 
-	/**
-	 * Gets the real color of the light, this color is defined thanks to the defined color as well as the brightness
-	 * 
-	 * @param {Serviceight.ColorUnit} [unit=LightService.ColorUnit.RGB] The colorunit, default to LightService.ColorUnit.RGB
-	 * @returns {number|{r: number, g: number, b: number}} Returns the color in unit defined in parameter
-	 * @throws {ArgumentError}
-	 */
-	getRealColor(unit = LightService.ColorUnit.RGB)
-	{
-		checkParam(this, "getRealColor", "unit", unit, LightService.ColorUnit, "LightService.ColorUnit");
-		if (unit == LightService.ColorUnit.RGB)
-			return (Color.xyBriToRgb(this._data.color.x, this._data.color.y, (this._data.brightness ?? 0) / 100));
-		if (unit == LightService.ColorUnit.HEX)
-			return (Color.xyBriToHex(this._data.color.x, this._data.color.y, (this._data.brightness ?? 0) / 100));
-		if (unit == LightService.ColorUnit.XY)
-			return ({...this._data.color, brightness: (this._data.brightness ?? 0) / 100});
+		if (!color?.x && !color?.y)
+			return (new Color("#ffe07e", this._data.colorGamut));
+		return (new Color(color, this._data.colorGamut));
 	}
 
 	/**
 	 * Sets the color of light
 	 * 
-	 * @param {number|{r: number, g: number, b: number}} value the color temperture in unit defined in parameter
-	 * @param {Serviceight.ColorUnit} [unit=LightService.ColorUnit.RGB] The color unit, default to LightService.ColorUnit.RGB
+	 * @param {Color|ColorValue} color The color
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
 	 */
-	setColor(value, unit, sender = this)
+	setColor(color, sender = this)
 	{
-		checkParam(this, "setColor", "value", value, "number");
-		checkParam(this, "setColor", "unit", unit, LightService.ColorUnit, "LightService.ColorUnit");
-		if (unit == LightService.ColorUnit.RGB)
-			value = Color.rgbToXy(value.r, value.g, value.b, this._data.colorGamut);
-		this._update.color = {xy: {x: value.x, y: value.y}};
-		if (this._prepareUpdate)
+		checkParam(this, "setColor", "color", color, [Color, "string", "object"]);
+		LightData.setColor(this._update, color, this._data.colorGamut);
+		if (sender._prepareUpdate)
+		{
+			sender._updatedService[this.getID()] = this;
 			return (sender);
-		return (this.update());
-	}
-
-	/**
-	 * Sets the color of light
-	 * 
-	 * @param {number|{r: number, g: number, b: number}} value the color temperture in unit defined in parameter
-	 * @param {Serviceight.ColorUnit} [unit=LightService.ColorUnit.RGB] The color unit, default to LightService.ColorUnit.RGB
-	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
-	 * @throws {ArgumentError}
-	 */
-	setRealColor(value, unit, sender = this)
-	{
-		checkParam(this, "setColor", "value", value, "number");
-		checkParam(this, "setColor", "unit", unit, LightService.ColorUnit, "LightService.ColorUnit");
-		if (unit == LightService.ColorUnit.RGB)
-			value = Color.rgbToXy(value.r, value.g, value.b, this._data.colorGamut);
-		this._update.color = {xy: {x: value.x, y: value.y}};
-		this._update.dimming = {brightness: value.brightness * 100};
-		if (this._prepareUpdate)
-			return (sender);
+		}
 		return (this.update());
 	}
 
@@ -343,7 +241,7 @@ export default class LightService extends Service
 	 * @returns {number} The speed of dynamic scene, between 0 and 100
 	 */
 	getDynamicSpeed()
-	{return (this._data.dynamicSpeed * 100)}
+	{return ((this._update.dynamics?.speed ?? this._data.dynamicSpeed) * 100)}
 
 	/**
 	 * Sets the dynamic scene speed
@@ -356,12 +254,15 @@ export default class LightService extends Service
 	{
 		checkParam(this, "setDynamicSpeed", "speed", speed, "number");
 		if (speed < 0 || speed > 100)
-			console.warn(`${this.constructor.name}.setDynamicSpeed(): Speed '${speed}' is out of range (0 <= value <= 100), sets to ${Math.min(Math.max(value, 0), 100)}`);
+			console.warn(`${sender.constructor.name}.setDynamicSpeed(): Speed '${speed}' is out of range (0 <= value <= 100), sets to ${Math.min(Math.max(value, 0), 100)}`);
 		speed = Math.min(Math.max(speed, 0), 100);
 		this._update.dynamics ??= {};
 		this._update.dynamics.speed = speed / 100;
-		if (this._prepareUpdate)
+		if (sender._prepareUpdate)
+		{
+			sender._updatedService[this.getID()] = this;
 			return (sender);
+		}
 		return (this.update());
 	}
 
@@ -374,29 +275,30 @@ export default class LightService extends Service
 	{return (this._data.dynamicStatus)}
 	 
 	/**
-	 * Sets the transition time of update
+	 * Sets the duration of a light transition or timed effects
 	 * 
 	 * @param {number} duration The duration value between 0 and 6000000, duration in ms
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
 	 */
-	setTransitionTime(duration, sender = this)
+	setDuration(duration, sender = this)
 	{
-		checkParam(this, "setTransitionTime", "duration", duration, "number");
+		checkParam(this, "setDuration", "duration", duration, "number");
 		if (duration < 0 || duration > 6000000)
-			console.warn(`${this.constructor.name}.setTransitionTime(): Duration '${duration}' is out of range (0 <= value <= 6000000), sets to ${Math.min(Math.max(value, 0), 6000000)}`);
-		duration = Math.min(Math.max(duration, 0), 6000000);
-		this._update.dynamics ??= {};
-		this._update.dynamics.duration = duration;
-		if (this._prepareUpdate)
+			console.warn(`${sender.constructor.name}.setDuration(): Duration '${duration}' is out of range (0 <= value <= 6000000), sets to ${Math.min(Math.max(value, 0), 6000000)}`);
+		LightData.setDuration(this._update, duration);
+		if (sender._prepareUpdate)
+		{
+			sender._updatedService[this.getID()] = this;
 			return (sender);
+		}
 		return (this.update());
 	}
 
 	/**
 	 * Sets the alert type to the light
 	 * 
-	 * @param {LightService.AlertType} type The type of alert
+	 * @param {LightService.AlertType[keyof typeof LightService.AlertType]} type The type of alert
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
 	 */
@@ -413,16 +315,80 @@ export default class LightService extends Service
 			this._updateV1.state ??= {};
 			this._updateV1.state.alert = type;
 		}
-		if (this._prepareUpdate)
+		if (sender._prepareUpdate)
+		{
+			sender._updatedService[this.getID()] = this;
 			return (sender);
+		}
 		return (this.update());
 	}
 
 	/**
 	 * Gets the current mode of the light
 	 * 
-	 * @returns {LightService.Mode} The mode
+	 * @returns {LightService.Mode[keyof typeof LightService.Mode]} The mode
 	 */
 	getMode()
-	{return (this._data.mode)}
+	{
+		if (this._data.mode == "normal")
+		{
+			if (this._data.effect && this._data.effect != LightService.Effect.NONE)
+				return (LightService.Mode.EFFECT);
+			else if (this._data.colorTemperature)
+				return (LightService.Mode.COLOR_TEMPERATURE);
+			else if (this._data.color)
+				return (LightService.Mode.COLOR);
+			return;
+		}
+		return (LightService.Mode.STREAMING);
+		// return (this._data.mode);
+	}
+
+	/**
+	 * Gets the list of supported effects of the light
+	 * 
+	 * @returns {LightService.Effect[keyof typeof LightService.Effect][]} The effect list
+	 */
+	getEffectList()
+	{return (this._data.effectList ?? [])}
+
+	/**
+	 * Check if the effect is supported by the light
+	 * 
+	 * @param {LightService.Effect[keyof typeof LightService.Effect]} effect The effect to check
+	 * @returns {boolean} True if the effect is suported otherwise false
+	 */
+	isSupportEffect(effect)
+	{
+		this.getMode().
+		checkParam(this, "isSupportEffect", "effect", effect, LightService.Effect, "LightService.Effect");
+		return (this._data.effectList?.includes?.(effect));
+	}
+
+	/**
+	 * Gets the current effect of the light
+	 * 
+	 * @returns {LightService.Effect[keyof typeof LightService.Effect]} The effect
+	 */
+	getEffect()
+	{return (this._update.effects?.effect ?? this._data.effect)}
+
+	/**
+	 * Sets the effect of the light
+	 * 
+	 * @param {LightService.Effect[keyof typeof LightService.Effect]} effect The effect
+	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
+	 * @throws {ArgumentError}
+	 */
+	setEffect(effect, sender = this)
+	{
+		checkParam(this, "setEffect", "effect", effect, LightService.Effect, "LightService.Effect");
+		LightData.setEffect(this._update, effect);
+		if (sender._prepareUpdate)
+		{
+			sender._updatedService[this.getID()] = this;
+			return (sender);
+		}
+		return (this.update());
+	}
 }

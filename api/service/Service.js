@@ -3,7 +3,10 @@ import Resource from "../Resource.js";
 
 export default class Service extends Resource
 {
-	/** @type {Device} */
+	/**
+	 * @type {Device}
+	 * @private
+	 */
 	_owner;
 	
 	constructor(bridge, data)
@@ -19,7 +22,13 @@ export default class Service extends Resource
 
 	emit(eventName, ...args)
 	{
+		if (this._owner)
+		{
+			if (eventName.includes("event_start"))
+				this._owner._eventStart();
+			else if (!["event_start", "event_end"].includes(eventName))
+				this._owner.emit(eventName, ...args);
+		}
 		super.emit(eventName, ...args);
-		this?._owner?.emit(eventName, ...args);
 	}
 }

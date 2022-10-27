@@ -16,12 +16,18 @@ export default class BridgeHome extends Group
 
 	_setData(data, update = false)
 	{
-		// console.log(data.children.map(child => child._id + " " + child.constructor.name));
 		super._setData(data, update);
+		data?.services?.forEach?.(service =>
+		{
+			if (!(service instanceof Resource))
+				service = this._bridge?._resources?.[`${service.type ?? service.rtype}/${service.id ?? service.rid}`];
+			if (service instanceof LightService)
+				this._addService(service);
+		})
 		data?.children?.forEach?.(device =>
 		{
 			if (!(device instanceof Resource))
-				device = this._bridge?._resources?.all?.[`${device.type ?? device.rtype}/${device.id ?? device.rid}`];
+				device = this._bridge?._resources?.[`${device.type ?? device.rtype}/${device.id ?? device.rid}`];
 			if (device instanceof Room)
 				this._room[device.getID()] = device;
 			else if (device instanceof Accessory)
@@ -33,10 +39,7 @@ export default class BridgeHome extends Group
 	{
 		super._addService(service);
 		if (service instanceof LightService)
-		{
-			service = service.getOwner();
-			this._light[service.getID()] = service;
-		}
+			this._addDevice(service.getOwner());
 	}
 
 	addLight(light)

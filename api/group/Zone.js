@@ -1,3 +1,5 @@
+import Light from "../light/Light.js";
+import Resource from "../Resource.js";
 import LightService from "../service/LightService.js";
 import Group from "./Group.js";
 
@@ -10,20 +12,14 @@ export default class Zone extends Group
 
 	_setData(data, update = false)
 	{
-		Object.values(this._light ?? {}).forEach(light => light.removeZone(this));
-		this._light = {};
 		super._setData(data, update);
-		// data?.children?.forEach?.(light =>
-		// {
-		// 	if (!(light instanceof Resource))
-		// 		light = this._bridge?._resources?.all?.[`${light.type ?? light.rtype}/${light.id ?? light.rid}`];
-		// 	if (light instanceof LightService)
-		// 	{
-		// 		light = light.getOwner();
-		// 		light?.addZone?.(this);
-		// 		this._light[light.getID()] = light;
-		// 	}
-		// })
+		data?.children?.forEach?.(light =>
+		{
+			if (!(light instanceof Resource))
+				light = this._bridge?._resources?.[`${light.type ?? light.rtype}/${light.id ?? light.rid}`];
+			if (light instanceof Resource)
+				this._addService(light);
+		})
 	}
 
 	_addService(service)
@@ -33,7 +29,25 @@ export default class Zone extends Group
 		{
 			service = service.getOwner();
 			service?.addZone?.(this);
-			this._light[service.getID()] = service;
+			this._addDevice(service);
 		}
 	}
+
+	addLight(light)
+	{
+		checkParam(this, "addLight", "light", light, Light);
+		super.addDevice(light);
+	}
+
+	removeLight(light)
+	{
+		checkParam(this, "removeLight", "light", light, Light);
+		super.removeDevice(light);
+	}
+
+	getLights()
+	{return (this.getDevices())}
+
+	getLight(id)
+	{return (this.getDevice(id))}
 }

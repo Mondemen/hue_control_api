@@ -6,4 +6,16 @@ export default class WhiteAmbianceBulb extends WhiteBulb
 	{
 		super(bridge, data);
 	}
+
+	getMinColorTemperature()
+	{return (this._light.getMinColorTemperature())}
+
+	getMaxColorTemperature()
+	{return (this._light.getMaxColorTemperature())}
+
+	getColorTemperature()
+	{return (this._light.getColorTemperature())}
+
+	setColorTemperature(value)
+	{return (this._light.setColorTemperature(value, this))}
 }

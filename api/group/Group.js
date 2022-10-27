@@ -1,11 +1,15 @@
-import MinimalLengthError from "../../lib/error/MinimalLengthEror.js";
+import MinimalLengthError from "../../lib/error/MinimalLengthError.js";
+import Light from "../light/Light.js";
 import Resource from "../Resource.js";
+import Scene from "../Scene.js";
 import GroupedLightService from "../service/GroupedLightService.js";
 
 const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.length || 1);
 
 /**
+ * @typedef {import('../Device.js').default} Device
  * @typedef {import('../light/Light.js').default} Light
+ * @typedef {import('../service/Service.js').default} Service
  */
 
 export default class Group extends Resource
@@ -15,75 +19,91 @@ export default class Group extends Resource
 	static ColorUnit = GroupedLightService.ColorUnit;
 	static AlertType = GroupedLightService.AlertType;
 
-	/** @type {Object.<string,Light>} */
-	_light = {};
-	/** @type {GroupedLightService} */
+	/**
+	 * @type {Object<string,Device>}
+	 * @private
+	 */
+	_devices = {};
+	/**
+	 * @type {GroupedLightService}
+	 * @private
+	 */
 	_groupedLight;
-	_services = {};
-	_spreadUpdateToLights = [];
+	/**
+	 * @type {Object<string,Service>}
+	 * @private
+	 */
+	 _services = {};
+	/**
+	 * @type {Object<string,Scene>}
+	 * @private
+	 */
+	_scenes = {};
 
 	constructor(bridge, data)
 	{
 		super(bridge, data);
 	}
 
-	convertOldData(id, data, services)
+	[Symbol.for('nodejs.util.inspect.custom')]()
 	{
-		let groupedLight = services?.groupedLightServices?.[id];
-		let light, lights = [];
-		let result =
+		return (
 		{
-			id: this.getID(),
-			id_v1: id,
-			type: this.getType(),
-			metadata:
-			{
-				name: data.name,
-				archetype: data.class.replace(/\s/g, "_").toLowerCase()
-			},
-			children: [],
-			services: []
-		}
-
-		lights = data.lights.map(id =>
-		{
-			light = services?.lightServices?.[`/lights/${id}`];
-			if (light)
-				return ({rid: light.getID(), rtype: light.getType()});
-		}).filter(light => light);
-		if (groupedLight)
-			groupedLight = {rid: groupedLight.getID(), rtype: groupedLight.getType()};
-		if (lights)
-		{
-			result.children = lights;
-			result.services = [...result.services, ...lights];
-		}
-		if (groupedLight)
-			result.services = [...result.services, groupedLight];
-		return (result);
+			...super[Symbol.for('nodejs.util.inspect.custom')](),
+			lights: Object.values(this._devices),
+		})
 	}
 
 	_setData(data, update = false)
 	{
 		super._setData(data, update);
-		this._data.name = data?.metadata?.name ?? this._data.name;
-		this._data.archetype = data?.metadata?.archetype ?? this._data.archetype;
+		if (this._data.name != data?.metadata?.name)
+		{
+			this._data.name = data?.metadata?.name;
+			this.emit("name", this._data.name);
+		}
+		if (this._data.archetype != data?.metadata?.archetype)
+		{
+			this._data.archetype = data?.metadata?.archetype;
+			this.emit("archetype", this._data.archetype);
+		}
 		data?.services?.forEach(service =>
 		{
 			if (!(service instanceof Resource))
-				service = this._bridge?._resources?.all?.[`${service.type ?? service.rtype}/${service.id ?? service.rid}`];
+				service = this._bridge?._resources?.[`${service.type ?? service.rtype}/${service.id ?? service.rid}`];
 			if (service instanceof Resource)
 				this._addService(service);
 		});
-		this._data.minBrightness = +Object.values(this._light).reduce((result, light) =>
+		this._data.minBrightness = +Object.values(this._devices).filter(device => device instanceof this.getBridge().Object.Light).reduce((result, light) =>
 		{
-			if (light.getCapabilities().includes("dimming"))
+			if (light.getCapabilities().has("dimming"))
 				result = Math.min(result, light.getMinBrightness());
 			return (result);
-		}, (Object.keys(this._light).length) ? Infinity : 0).toFixed(2);
-		this._updateFromChildren(null, null, update);
+		}, (Object.keys(this._devices).length) ? Infinity : 0).toFixed(2);
 	}
 
+	/**
+	 * @returns {Object}
+	 * @private
+	 */
+	_getFullData()
+	{
+		return (
+		{
+			...super._getFullData(),
+			name: this._data.name,
+			archetype: this._data.archetype,
+			...this._groupedLight?._getFullData(),
+			lights: Object.keys(this._devices)
+		})
+	}
+
+	/**
+	 * Add GroupLightService
+	 * 
+	 * @private
+	 * @param {GroupLightService} service The service
+	 */
 	_addService(service)
 	{
 		this._services[service._id] = service;
@@ -94,76 +114,62 @@ export default class Group extends Resource
 		}
 	}
 
-	_updateFromChildren(eventName, light, update = false)
+	/**
+	 * Add Scene
+	 * 
+	 * @param {Scene} scene The scene
+	 * @private
+	 */
+	_addScene(scene)
 	{
-		let state, brightness;
-
-		if (!this._groupedLight)
-			return;
-		if ((!eventName || eventName == "state") && light)
-		{
-			state = light.getState();
-			if (this._spreadUpdateToLights.length)
-			{
-				Object.values(this._light).forEach(light =>
-				{
-					if (state != light._light?._data?.state)
-					{
-						light._light._data.state = state;
-						if (update)
-							light.stopPropagation().emit("state", light._light._data.state);
-					}
-				})
-			}
-			if (!this._spreadUpdateToLights.length)
-				state = Object.values(this._light).reduce((result, light) => result || light.getState(), false);
-			this._spreadUpdateToLights.pop();
-			if (state != this._groupedLight._data.state)
-			{
-				this._groupedLight._data.state = state;
-				if (update)
-					this._groupedLight.emit("state", this._groupedLight._data.state);
-			}
-		}
-		if (!eventName || eventName == "brightness")
-		{
-			if (light && this._spreadUpdateToLights.length)
-				brightness = light.getBrightness();
-			else
-			{
-				brightness = +numberAverage(Object.values(this._light).reduce((result, light) =>
-				{
-					if (light.getState())
-						result.push(light.getBrightness())
-					return (result);
-				}, [])).toFixed(2);
-			}
-			brightness = Math.max(brightness, this.getMinBrightness());
-			if (this._spreadUpdateToLights.length)
-			{
-				Object.values(this._light).forEach(light =>
-				{
-					// console.log("DISPATCH", brightness, light._data.brightness);
-					if (light.getState() && brightness != light._light?._data?.brightness)
-					{
-						light._light._data.brightness = brightness;
-						if (update)
-						{
-							light.stopPropagation().emit("brightness", light._light._data.brightness);
-							light.stopPropagation().emit("real_color", {...light._data.color, brightness: (light._data.brightness ?? 0) / 100})
-						}
-					}
-				})
-			}
-			this._spreadUpdateToLights.pop();
-			if (brightness != this._groupedLight._data.brightness)
-			{
-				this._groupedLight._data.brightness = brightness;
-				if (update)
-					this._groupedLight.emit("brightness", this._groupedLight._data.brightness);
-			}
-		}
+		if (scene instanceof Scene)
+			this._scenes[scene.getID()] = scene;
 	}
+
+	/**
+	 * Delete Scene
+	 * 
+	 * @param {Scene|string} scene The scene
+	 * @private
+	 */
+	_deleteScene(scene)
+	{delete this._scenes[scene?.getID?.() ?? scene]}
+
+	/**
+	 * Add Device
+	 * 
+	 * @param {Device} device The device
+	 * @private
+	 */
+	_addDevice(device)
+	{
+		if (device instanceof this.getBridge().Object.Device)
+			this._devices[device.getID()] = device;
+	}
+
+	/**
+	 * Delete Device
+	 * 
+	 * @param {Device|string} device The device
+	 * @private
+	 */
+	_deleteDevice(device)
+	{delete this._devices[device?.getID?.() ?? device]}
+
+	createScene()
+	{
+		let scene = new Scene(this._bridge);
+
+		scene._exists = false;
+		scene._setGroup(this);
+		return (scene);
+	}
+
+	getScenes()
+	{return (Object.values(this._scenes))}
+
+	getScene(id)
+	{return (this._scenes[id])}
 
 	/**
 	 * Gets the name
@@ -181,54 +187,65 @@ export default class Group extends Resource
 	getArchetype()
 	{return (this._data.archetype)}
 
-	 addLight(light)
+	/**
+	 * Add device to group
+	 * 
+	 * @param {Device} device The device to adds to the group
+	 * @returns {Group|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
+	 */
+	addDevice(device)
 	{
-		// const Light = require("../light/Light.js").default;
-		const lightIDRegex = /\/?\w+\//;
-
-		this._updateV1[""] ??= {};
-		this._updateV1[""].lights ??= Object.values(this._light).map(light => light.getOldID().replace(lightIDRegex, ""));
-		this._updateV1[""].lights.push((light?._light ?? light).getOldID().replace(lightIDRegex, ""));
-		if (this._prepareUpdate)
-			return (this);
-		return (this.update());
-	}
-
-	removeLight(light)
-	{
-		const lightIDRegex = /\/?\w+\//;
-		let id;
-		let index;
-
-		this._updateV1[""] ??= {};
-		this._updateV1[""].lights ??= Object.values(this._light).map(light => light.getOldID().replace(lightIDRegex, ""));
-		if (this._updateV1[""].lights.length <= 1)
-			throw new MinimalLengthError(this, "removeLight", this.getType(), "light", 1);
-		id = (light?._light ?? light).getOldID().replace(lightIDRegex, "");
-		if ((index = this._updateV1[""].lights.findIndex(light => light == id)) >= 0)
-			this._updateV1[""].lights.splice(index, 1);
+		this._update ??= {};
+		this._update.children ??= Object.values(this._devices).map(device => ({rtype: device.getType(), rid: device.getID()}));
+		this._update.children.push({rtype: device.getType(), rid: device.getID()});
 		if (this._prepareUpdate)
 			return (this);
 		return (this.update());
 	}
 
 	/**
-	 * Gets the list of light in this group
+	 * Remove device to group
 	 * 
-	 * @returns {Light[]} The list of light
+	 * @param {Device} device The device to remove from the group
+	 * @returns {Group|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
-	getLights()
-	{return (Object.values(this._light))}
+	removeDevice(device)
+	{
+		let index;
+
+		this._update ??= {};
+		this._update.children ??= Object.values(this._devices).map(device => ({rtype: device.getType(), rid: device.getID()}));
+		if (this._update[""].children.length <= 1)
+			throw new MinimalLengthError(this, "removeDevice", this.getType(), "device", 1);
+		if ((index = this._update[""].children.findIndex(child => child.rid == device.getID())) >= 0)
+			this._update[""].children.splice(index, 1);
+		if (this._prepareUpdate)
+			return (this);
+		return (this.update());
+	}
+
+	/**
+	 * Gets device from this group
+	 * 
+	 * @param {string} id The device ID
+	 * @returns {Device} The device
+	 */
+	getDevice(id)
+	{return (this._devices[id])}
+
+	/**
+	 * Gets the list of device in this group
+	 * 
+	 * @returns {Device[]} The list of device
+	 */
+	getDevices()
+	{return (Object.values(this._devices))}
 
 	getState()
 	{return (this._groupedLight?.getState?.() ?? Group.State.OFF)}
 
 	setState(state)
-	{
-		// this._spreadUpdateToLights = Object.values(this._light).filter(light => light.getState() != state).map(light => light.getID());
-		this._spreadUpdateToLights = [this.getID()];
-		return (this._groupedLight?.setState?.(state, this) ?? ((this._prepareUpdate) ? true : Promise.resolve()));
-	}
+	{return (this._groupedLight?.setState?.(state, this) ?? ((this._prepareUpdate) ? true : Promise.resolve()))}
 
 	turnOn()
 	{return (this.setState(Group.State.ON))}
@@ -240,13 +257,31 @@ export default class Group extends Resource
 	{return (this._data.minBrightness)}
 
 	getBrightness()
-	{return (Math.max(this._groupedLight?.getBrightness?.() ?? 0, this.getMinBrightness()))}
+	{
+		let brightness;
+
+		if (this._groupedLight?.getBrightness?.() != undefined)
+			return (Math.max(this._groupedLight.getBrightness(), this.getMinBrightness()))
+		brightness = this.getDevices().filter(device => device instanceof this.getBridge().Object.Light).reduce((list, light) =>
+		{
+			if (light.getState?.() && light.getCapabilities?.().has("dimming"))
+				list.push(light.getBrightness?.());
+			return (list);
+		}, []);
+		if (brightness.length)
+			return (brightness.reduce((sum, value) => sum + value, 0) / brightness.length);
+		return (0);
+	}
 
 	setBrightness(brightness)
 	{
 		brightness = Math.max(brightness, this.getMinBrightness());
-		// this._spreadUpdateToLights = Object.values(this._light).filter(light => light.getState()).map(light => light.getID());
-		this._spreadUpdateToLights = [this.getID()];
 		return (this._groupedLight?.setBrightness?.(brightness, this) ?? ((this._prepareUpdate) ? true : Promise.resolve()));
 	}
+
+	setColor(color)
+	{return (this._groupedLight.setColor(color, this))}
+
+	setColorTemperature(mired)
+	{return (this._groupedLight.setColorTemperature(mired, this))}
 }

@@ -1,8 +1,11 @@
+import ErrorCodes from "../lib/error/ErrorCodes.js";
+import EventEmitter from "../lib/EventEmitter.js";
+
 /**
  * @typedef {import('./Bridge.js').default} Bridge
  */
 
-export default class Resource
+export default class Resource extends EventEmitter
 {
 	/**
 	 * Type of resource
@@ -40,35 +43,92 @@ export default class Resource
 		ZONE: "zone"
 	}
 
-	/** @type {Bridge} */
+	/**
+	 * @type {Bridge}
+	 * @private
+	 */
 	_bridge;
+	/** @private */
+	_type;
+	/** @private */
+	_typeV1;
+	/** @private */
+	_id;
+	/** @private */
 	_data = {};
+	/** @private */
 	_prepareUpdate = false;
+	/** @private */
+	_create = {};
+	/** @private */
+	_createV1 = {};
+	/** @private */
+	_updatedService = {};
+	/** @private */
 	_update = {};
+	/** @private */
 	_updateV1 = {};
-	_events = {};
-	_propagate = true;
+	/** @private */
+	_exists = true;
+	/** @private */
+	_alive = false;
+	/** @private */
 	_called = false;
 
 	constructor(bridge, data)
 	{
+		super();
 		if (bridge)
 			this._bridge = bridge;
 		if (data)
-		{
 			this._setData(data);
-			this._called = false;
-		}
 	}
 
-	_setData(data, update = false)
+	[Symbol.for('nodejs.util.inspect.custom')]()
 	{
-		this._called = true;
-		this._id = `${data?.type}/${data?.id}`;
-		this._data.id = data?.id;
-		this._data.id_v1 = data?.id_v1;
-		this._data.type = data?.type;
+		let data = {...this._data};
+
+		delete data.id;
+		delete data.type;
+		return (
+		{
+			_id: this._id,
+			id: this._data.id ?? this._data.rid,
+			type: this._data.type ?? this._data.rtype,
+			data
+		})
 	}
+
+	/**
+	 * @private
+	 */
+	_setData(data)
+	{
+		this._alive = true;
+		if (data?.id && data?.type)
+			this._id = `${data?.type}/${data?.id}`;
+		this._data.id = data?.id ?? this._data.id;
+		this._data.id_v1 = data?.id_v1 ?? this._data.id_v1;
+		this._data.type = data?.type ?? this._data.type;
+	}
+
+	/**
+	 * @private
+	 */
+	_getFullData()
+	{return ({})}
+	
+	/**
+	 * @private
+	 */
+	_add()
+	{this._bridge?.emit("add_resource", this)}
+
+	/**
+	 * @private
+	 */
+	_delete()
+	{this._bridge?.emit("delete_resource", this)}
 
 	getObjectType()
 	{return (this.constructor.name)}
@@ -79,7 +139,7 @@ export default class Resource
 	 * @returns {Bridge} The bridge of resource
 	 */
 	getBridge()
-	{return (this._bridge)};
+	{return (this._bridge)}
 
 	/**
 	 * Gets the ID of resource
@@ -87,7 +147,7 @@ export default class Resource
 	 * @returns {string} The ID of resource
 	 */
 	getID()
-	{return (this._data.id)};
+	{return (this._data.id)}
 
 	/**
 	 * Gets the old ID of resource
@@ -95,111 +155,212 @@ export default class Resource
 	 * @returns {string} The old ID of resource
 	 */
 	getOldID()
-	{return (this._data.id_v1)};
+	{return (this._data.id_v1)}
 
 	/**
 	 * Gets the type of resource
 	 * 
-	 * @returns {Resource.Type} The type of resource
+	 * @returns {Resource.Type[keyof typeof Resource.Type]} The type of resource
 	 */
 	getType()
-	{return (this._data.type)};
-
+	{return (this._data.type)}
+	
 	/**
-	 * Stop event propagation for the next emit()
+	 * Check if this resource exists in bridge
 	 * 
-	 * @returns {Resource} This resource
+	 * @returns {boolean}
 	 */
-	stopPropagation()
-	{
-		this._propagate = false;
-		return (this);
-	}
-
-	/**
-	 * Synchronously calls each of the listeners registered for the event named eventName, in the order they were registered, passing the supplied arguments to each.
-	 * @param {string} eventName The event name
-	 * @param  {...any} args 
-	 */
-	emit(eventName, ...args)
-	{
-		this._events[eventName]?.forEach?.(callback => callback(...args));
-		this._propagate = true;
-	}
-
-	/**
-	 * Adds the listener function to the end of the listeners array for the event named eventName
-	 * 
-	 * @param {string} eventName The event name
-	 * @param {Function} listener The listener
-	 */
-	on(eventName, listener)
-	{
-		this._events[eventName] ??= [];
-		this._events[eventName].push(listener);
-	}
-
-	/**
-	 * Removes the specified listener from the listener array for the event named eventName.
-	 * 
-	 * @param {string} eventName The event name
-	 * @param {Function} listener The listener to remove or not
-	 */
-	off(eventName, listener)
-	{
-		let index;
-
-		if (arguments.length >= 2)
-		{
-			index = this._events[eventName]?.findIndex?.(func => func.toString() == listener.toString());
-			if (index >= 0)
-				this._events[eventName].splice(index, 1);
-			if (!this._events[eventName])
-				delete this._events[eventName];
-		}
-		else
-			delete this._events[eventName];
-	}
+	isExists()
+	{return (this._exists)}
 
 	prepareUpdate()
 	{
 		this._prepareUpdate = true;
-		return (true);
+		return (this);
 	}
 
-	async update(sender)
+	cancelUpdate()
 	{
-		let url;
+		this._prepareUpdate = false;
+		return (this);
+	}
+
+	/**
+	 * @private
+	 */
+	_eventStart()
+	{
+		if (!this._called)
+		{
+			this.emit("event_start");
+			this._called = true;
+		}
+	}
+
+	/**
+	 * @private
+	 */
+	_eventEnd(bridge = this._bridge)
+	{
+		let eventEnd = resource =>
+		{
+			if (resource && resource._called)
+			{
+				resource.emit("event_end");
+				resource._called = false;
+			}
+		}
+
+		bridge?.getLights().forEach(light => eventEnd(light));
+		for (const id in bridge?._resources)
+			eventEnd(bridge._resources[id]);
+		eventEnd(bridge);
+	}
+
+	emit(eventName, ...args)
+	{
+		if (eventName.includes("event_start"))
+			this._bridge?._eventStart();
+		super.emit(eventName, ...args);
+	}
+
+	/**
+	 * @private
+	 */
+	_errorManager(response)
+	{
+		let messages = response?.data?.errors?.map(error => error.description) ?? [];
+
+		if (Object.values(ErrorCodes.http).includes(response?.statusCode))
+			throw {code: response.statusCode, message: messages};
+	}
+
+	async create()
+	{
+		let request, response;
+		let baseURL;
+		let data;
 
 		if (!this._bridge)
 			throw new Error("No brigde provided");
+		baseURL = this._bridge._baseURL;
+		if (Object.keys(this._create).length)
+		{
+			if (this._bridge._remoteAccess)
+				baseURL += "/route";
+			// console.log("CREATE", `https://${baseURL}/clip/v2/resource/${this._type}`, this._create);
+			request = this._bridge.request(`https://${baseURL}/clip/v2/resource/${this._type}`).post();
+			request.setHeader("hue-application-key", this._bridge._appKey);
+			request.setBody(this._create);
+			this._create = {};
+		}
+		else if (Object.keys(this._createV1).length)
+		{
+			if (this._bridge._remoteAccess)
+				baseURL += "/bridge";
+			// console.log("CREATE V1", `https://${baseURL}/api/${this._bridge._appKey}/${this._typeV1}`, this._createV1);
+			request = this._bridge.request(`https://${baseURL}/api/${this._bridge._appKey}/${this._typeV1}`).post();
+			request.setBody(this._createV1);
+			this._createV1 = {};
+		}
+		if (this._bridge._remoteAccess)
+			request.setHeader("Authorization", `Bearer ${this._bridge._remoteAccess.access_token}`);
+		else
+			request.setStrictSSL(false);
+		this._prepareUpdate = false;
+		response = await request.execute();
+		this._errorManager(response);
+		if (response?.data?.data?.[0])
+			data = {type: response.data.data[0].rtype, id: response.data.data[0].rid};
+		if (data)
+			this._setData(data);
+		else
+			throw {code: ErrorCodes.notCreated, message: ["Resource not create due to error"]}
+		return (data);
+	}
+
+	async delete()
+	{
+		let request;
+		let response;
+		let baseURL;
+
+		if (!this._bridge)
+			throw new Error("No brigde provided");
+		baseURL = this._bridge._baseURL;
+		if (this._bridge._remoteAccess)
+			baseURL += "/route";
+		// console.log("DELETE", `https://${baseURL}/clip/v2/resource/${this._id}`);
+		request = this._bridge.request(`https://${baseURL}/clip/v2/resource/${this._id}`).delete();
+		request.setHeader("hue-application-key", this._bridge._appKey);
+		if (this._bridge._remoteAccess)
+			request.setHeader("Authorization", `Bearer ${this._bridge._remoteAccess.access_token}`);
+		else
+			request.setStrictSSL(false);		
+		this._prepareUpdate = false;
+		response = await request.execute();
+		this._errorManager(response);
+	}
+
+	async update()
+	{
+		let promises = [];
+		let request;
+		let response, tmpResponse;
+		let baseURL, url;
+
+		if (!this._bridge)
+			throw new Error("No brigde provided");
+		promises.push(...Object.values(this._updatedService).map(service => service.update()));
+		baseURL = this._bridge._baseURL;
 		if (Object.keys(this._update).length)
 		{
-			// console.log("SEND REQUEST", `https://${this._bridge._baseURL}/clip/v2/resource/${this._id}`, this._bridge._appKey, this._update);
-			await new this._bridge._request(`https://${this._bridge._baseURL}/clip/v2/resource/${this._id}`)
-			.put()
-			.setStrictSSL(false)
-			.setHeader("hue-application-key", this._bridge._appKey)
-			.setBody(this._update)
-			.execute();
-			this._update = {};
+			if (this._bridge._remoteAccess)
+				baseURL += "/route";
+			// console.log("UPDATE", `https://${this._bridge._baseURL}/clip/v2/resource/${this._id}`, this._update);
+			request = this._bridge.request(`https://${baseURL}/clip/v2/resource/${this._id}`).put();
+			request.setHeader("hue-application-key", this._bridge._appKey);
+			if (this._bridge._remoteAccess)
+				request.setHeader("Authorization", `Bearer ${this._bridge._remoteAccess.access_token}`);
+			else
+				request.setStrictSSL(false);
+			request.setBody(this._update);
+			promises.push(new Promise(async (resolve, reject) =>
+			{
+				try
+				{
+					tmpResponse = await request.execute();
+					this._eventStart();
+					this._setData(this._update);
+					this._eventEnd(this._bridge);
+					resolve(tmpResponse);
+				}
+				catch (error) {reject(error)}
+				finally {this._update = {}}
+			}));
 		}
 		if (Object.keys(this._updateV1).length)
 		{
+			if (this._bridge._remoteAccess)
+				baseURL += "/bridge";
 			for (let [type, data] of Object.entries(this._updateV1))
 			{
-				url = `https://${this._bridge._baseURL}/api/${this._bridge._appKey}${this.getOldID()}`;
+				url = `https://${baseURL}/api/${this._bridge._appKey}${this.getOldID()}`;
 				if (type)
 					url += `/${type}`;
-				// console.log("SEND REQUEST V1", data);
-				await new this._bridge._request(url)
-				.put()
-				.setStrictSSL(false)
-				.setBody(data)
-				.execute();
+				// console.log("UPDATE V1", url, data);
+				request = this._bridge.request(url).put();
+				if (this._bridge._remoteAccess)
+					request.setHeader("Authorization", `Bearer ${this._bridge._remoteAccess.access_token}`);
+				else
+					request.setStrictSSL(false);
+				request.setBody(data);
+				promises.push(request.execute());
 			}
 			this._updateV1 = {};
 		}
 		this._prepareUpdate = false;
+		response = await Promise.all(promises);
+		response.forEach(response => this._errorManager(response));
 	}
 }

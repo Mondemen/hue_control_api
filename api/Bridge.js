@@ -20,13 +20,19 @@ import TemperatureService from "./service/TemperatureService.js";
 import ZGPConnectivityService from "./service/ZGPConnectivityService.js";
 import ZigbeeConnectivityService from "./service/ZigbeeConnectivityService.js";
 import Group from "./group/Group.js";
-import BridgeHome from "./group/BridgeHome.js";
 import Room from "./group/Room.js";
 import Zone from "./group/Zone.js";
+import BridgeHome from "./group/BridgeHome.js";
+import Scene from "./Scene.js";
 
 // import util from "util";
 // import {createRequire} from 'module';
 // const require = createRequire(import.meta.url);
+
+/**
+ * @typedef {import('../lib/Request.js').default} Request
+ * @typedef {import('../lib/Connector.js').default} Connector
+ */
 
 export default class Bridge extends Device
 {
@@ -43,46 +49,119 @@ export default class Bridge extends Device
 		CLOSED: "CLOSED"
 	}
 
-	_baseURL;
-	_appKey;
-	_remoteAccess;
-	_connected = false;
-	_stream;
-	_streamEnabled = false;
-	_bridgeHome;
-	_bridgeData;
-	_connectivity;
-	_entertainment;
-	_service = {};
-	_request;
-	_resources =
+	get Object()
 	{
-		light: {},
-		motion: {},
-		switch: {},
-		button: {},
-		device: {},
-		group: {},
-		service: {},
-		resource: {},
-		all: {}
+		return (
+		{
+			MotionSensor,
+			Switch,
+			Device,
+			ColorBulb,
+			Light,
+			Plug,
+			WhiteAmbianceBulb,
+			WhiteAndColorBulb,
+			WhiteBulb,
+			Resource,
+			BridgeService,
+			ButtonService,
+			DevicePowerService,
+			GroupedLightService,
+			LightLevelService,
+			LightService,
+			MotionService,
+			Service,
+			TemperatureService,
+			ZGPConnectivityService,
+			ZigbeeConnectivityService,
+			Group,
+			Room,
+			Zone,
+			BridgeHome,
+			Scene
+		})
 	}
 
-	constructor(baseURL, appKey, remoteAccess, request)
+	/** @private */
+	_baseURL;
+	/** @private */
+	_appKey;
+	/** @private */
+	_remoteAccess;
+	/** @private */
+	_connector;
+	/** @private */
+	_connected = false;
+	/** @private */
+	_consumeEvents = false;
+	/**
+	 * @type {Request}
+	 * @private
+	 */
+	_stream;
+	/** @private */
+	_bridgeHome;
+	/**
+	 * @type {BridgeService}
+	 * @private
+	 */
+	_bridgeData;
+	/** @private */
+	_connectivity;
+	/** @private */
+	_entertainment;
+	/** @private */
+	_service = {};
+	/** @private */
+	_request;
+	/** @private */
+	/** @type {Object<string, Resource>} */
+	_resources = {};
+
+	/**
+	 * Object represents Philips Hue bridge
+	 * 
+	 * @param {string} baseURL IP or URL of the bridge
+	 * @param {string} appKey The application key
+	 * @param {*} remoteAccess Remote access data
+	 * @param {Connector} connector The Connector object
+	 */
+	constructor(baseURL, appKey, remoteAccess, connector)
 	{
 		super();
 		if (!baseURL)
 			throw new Error("No base URL defined");
 		if (!appKey)
 			throw new Error("No application key defined");
-		if (!request)
-			throw new Error("No request client has been defined");
+		if (!connector)
+			throw new Error("No connector has been defined");
 		this._baseURL = baseURL;
 		this._appKey = appKey;
 		this._remoteAccess = remoteAccess;
-		this._request = request;
+		this._request = connector._request;
+		this._connector = connector;
 	}
 
+	isConnected()
+	{return (this._connected)}
+
+	isConsumeEvents()
+	{return (this._consumeEvents)}
+
+	/**
+	 * 
+	 * @param {string} url The URL of the request
+	 * @returns {Request}
+	 */
+	request(url)
+	{return(new this._request(url))};
+
+	/**
+	 * Add bridge service
+	 * 
+	 * @private
+	 * @param {BridgeService} service The bridge service
+	 */
 	_addService(service)
 	{
 		super._addService(service);
@@ -90,150 +169,149 @@ export default class Bridge extends Device
 			this._bridgeData = service;
 	}
 
-	isConnected()
-	{return (this._connected)}
+	/**
+	 * @private
+	 */
+	_streamEvent()
+	{
+		let baseURL = this._baseURL;
+		let resourceObj;
+
+		if (this._remoteAccess)
+			baseURL += "/route";
+		this._stream = this.request(`https://${baseURL}/eventstream/clip/v2`);
+		this._stream.setHeader("Accept", "application/json");
+		this._stream.setHeader("hue-application-key", this._appKey);
+		if (this._remoteAccess)
+			this._stream.setHeader("Authorization", `Bearer ${this._remoteAccess.access_token}`);
+		else
+			this._stream.setStrictSSL(false);
+		this._stream.connect();
+		this._stream.on("open", () =>
+		{
+			this._connected = true;
+			this._consumeEvents = true;
+			this.emit("connected");
+		});
+		this._stream.on("data", data =>
+		{
+			JSON.parse(data).forEach(event =>
+			{
+				switch (event.type.toLowerCase())
+				{
+					case "update":
+					{
+						event.data.forEach(resource =>
+						{
+							if (!this._resources[`${resource.type}/${resource.id}`])
+								return;
+							resourceObj = this._resources[`${resource.type}/${resource.id}`];
+							resourceObj._eventStart();
+							resourceObj._setData(resource, true);
+							resourceObj.emit("change");
+						})
+						break;
+					}
+					case "add":
+					{
+						this.addResources(event);
+						break;
+					}
+					case "delete":
+					{
+						event.data.forEach(resource =>
+						{
+							if (!this._resources[`${resource.type}/${resource.id}`])
+								return;
+							this._resources[`${resource.type}/${resource.id}`]._alive = false;
+						})
+						this.deleteResources();
+						break;
+					}
+					default:
+					{
+						console.log("UNSUPPORTED EVENT", event);
+						break;
+					}
+				}
+			})
+			this._eventEnd(this);
+		});
+		this._stream.on("error", error =>
+		{
+			this.emit("connection_error", error);
+			if (this._connected)
+				this.emit("disconnected");
+			this._connected = false;
+			this._consumeEvents = false;
+			this._stream?.close?.();
+			this._streamEvent();
+		});
+	}
+
+	// async _streamEventV1(once = true)
+	// {
+	// 	let url = `https://${this._baseURL}/api/${this._appKey}${this.getOldID()}`;
+	// 	let groups = {}, groupedLightServices = {}, lightServices = {};
+		
+	// 	if (!this._streamEnabled)
+	// 		return;
+	// 	try
+	// 	{
+	// 		resources = (await this.request(`${url}`).get().setStrictSSL(false).setHeader("Accept", "application/json").execute()).data;
+	// 		this._connected = true;
+	// 		Object.values(this._resources.service).forEach(service =>
+	// 		{
+	// 			if (service instanceof GroupedLightService)
+	// 				groupedLightServices[service.getOldID()] = service;
+	// 			else if (service instanceof LightService)
+	// 				lightServices[service.getOldID()] = service;
+	// 		})
+	// 		groups = Object.values(this._resources.group).reduce((result, group) => {result[group.getOldID()] = group; return (result)}, {});
+	// 		Object.entries(resources.groups).forEach(([id, group]) =>
+	// 		{
+	// 			id = `/groups/${id}`;
+	// 			if (groups[id])
+	// 				groups[id]._setData(groups[id].convertOldData(id, group, {groupedLightServices, lightServices}), true);
+	// 			if (groupedLightServices[id])
+	// 				groupedLightServices[id]._setData(groupedLightServices[id].convertOldData(id, group, {groupedLightServices, lightServices}), true);
+	// 		})
+	// 	}
+	// 	catch (error)
+	// 	{
+	// 		this.emit("connection_error", error);
+	// 		if (this._connected)
+	// 			this.emit("disconnected");
+	// 		this._connected = false;
+	// 	}
+	// 	finally
+	// 	{
+	// 		if (this._streamEnabled && !once)
+	// 			setTimeout(() => this._streamEventV1(), 1000);
+	// 	}
+	// }
+
+	async refreshToken()
+	{
+		let refreshToken;
+
+		if (new Date(this._remoteAccess.expires_at).getTime() > Date.now())
+			return;
+		refreshToken = await this._connector.getRefreshToken(this._remoteAccess);
+		this._remoteAccess = {...this._remoteAccess, ...refreshToken};
+		this.emit("refresh_token", refreshToken);
+	}
 
 	async connect()
 	{
-		let result, resources;
-		let devices, groups, services;
-		let streamConnect = async () =>
-		{
-			let resourceObj;
-
-			this._stream = new this._request(`https://${this._baseURL}/eventstream/clip/v2`)
-			.setStrictSSL(false)
-			.setHeader("Accept", "application/json")
-			.setHeader("hue-application-key", this._appKey)
-			.connect()
-
-			this._stream.on("open", () =>
-			{
-				this._connected = true;
-				this.emit("connected");
-			});
-			this._stream.on("data", data =>
-			{
-				let updatedResource = {};
-
-				// console.time("EVENT");
-				JSON.parse(data).forEach(event =>
-				{
-					// console.log("EVENT ORIGIN", event.type, util.inspect(event.data, false, null, true));
-					event.data.forEach(async resource =>
-					{
-						if (!this._resources.all[`${resource.type}/${resource.id}`])
-							return;
-						resourceObj = this._resources.all[`${resource.type}/${resource.id}`]
-						if (!updatedResource[`${resource.type}/${resource.id}`])
-						{
-							resourceObj.emit("event_start");
-							updatedResource[`${resource.type}/${resource.id}`] = resourceObj;
-						}
-						if (event.type.toLowerCase() == "update")
-						{
-							// if (resource.type == "light")
-								// console.log("EVENT", resource, event.type);
-							// console.time(`${resource.id} -- ${resource.type}`);
-							resourceObj._setData(resource, true);
-							// if (resourceObj instanceof Group || resourceObj instanceof GroupedLightService)
-								// await oldStreamConnect(true);
-							resourceObj.emit("change");
-							// console.timeEnd(`${resource.id} -- ${resource.type}`);
-						}
-					})
-				})
-				Object.values(this._resources.all).forEach(resource =>
-				{
-					if (resource._called)
-					{
-						resource._called = false;
-						resource.emit("event_end");
-					}
-				});
-				// console.timeEnd("EVENT");
-			});
-			this._stream.on("error", error =>
-			{
-				this.emit("connection_error", error);
-				if (this._connected)
-					this.emit("disconnected");
-				this._connected = false;
-				this._stream?.close?.();
-				streamConnect();
-			});
-		}
-		let oldStreamConnect = async (once = false) =>
-		{
-			let url = `https://${this._baseURL}/api/${this._appKey}${this.getOldID()}`;
-			let groups = {}, groupedLightServices = {}, lightServices = {};
-			
-			if (!this._streamEnabled)
-				return;
-			try
-			{
-				resources = (await new this._request(`${url}`).get().setStrictSSL(false).setHeader("Accept", "application/json").execute()).data;
-				this._connected = true;
-				Object.values(this._resources.service).forEach(service =>
-				{
-					if (service instanceof GroupedLightService)
-						groupedLightServices[service.getOldID()] = service;
-					else if (service instanceof LightService)
-						lightServices[service.getOldID()] = service;
-				})
-				groups = Object.values(this._resources.group).reduce((result, group) => {result[group.getOldID()] = group; return (result)}, {});
-				Object.entries(resources.groups).forEach(([id, group]) =>
-				{
-					id = `/groups/${id}`;
-					if (groups[id])
-						groups[id]._setData(groups[id].convertOldData(id, group, {groupedLightServices, lightServices}), true);
-					if (groupedLightServices[id])
-						groupedLightServices[id]._setData(groupedLightServices[id].convertOldData(id, group, {groupedLightServices, lightServices}), true);
-				})
-			}
-			catch (error)
-			{
-				this.emit("connection_error", error);
-				if (this._connected)
-					this.emit("disconnected");
-				this._connected = false;
-			}
-			finally
-			{
-				if (this._streamEnabled && !once)
-					setTimeout(oldStreamConnect, 1000);
-			}
-		};
+		let result;
 
 		if (this._connected)
-			return;
-		try
-		{
-			result = (await new this._request(`https://${this._baseURL}/clip/v2/resource`)
-			.setStrictSSL(false)
-			.setHeader("Accept", "application/json")
-			.setHeader("hue-application-key", this._appKey)
-			.execute());
-			resources = result.data;
-
-			// console.log();
-			// console.log(result.headers);
-			// resources = JSON.parse(resources.data);
-			devices = resources.data.filter(device => device.type.toLowerCase() == "device");
-			groups = resources.data.filter(group => ["zone", "room", "bridge_home"].includes(group.type.toLowerCase()));
-			services = resources.data.filter(service => !["device", "zone", "room", "bridge_home"].includes(service.type.toLowerCase()));
-			devices?.forEach?.(resource => this.addResource(resource, services));
-			groups?.forEach?.(resource => this.addResource(resource, services));
-			services?.forEach?.(resource => this.addResource(resource, services));
-			this._streamEnabled = true;
-			
-			streamConnect();
-			// await Promise.all([streamConnect(), oldStreamConnect()]);
-			// this._connected = true;
-			// this.emit("connected");
-		}
-		catch (error)
-		{this.emit("connection_error", error)}
+			return (true);
+		result = await this.refreshResources();
+		this._streamEvent();
+		this._connected = true;
+		return (result);
 	}
 
 	close()
@@ -243,15 +321,79 @@ export default class Bridge extends Device
 		this._streamEnabled = false
 		this._stream?.close?.();
 		this._connected = false;
+		this._consumeEvents = true;
 		this.emit("disconnected");
 	}
 
-	addResource(data, list)
+	async refreshResources()
 	{
-		let index;
+		let baseURL;
+		let req, result;
+
+		baseURL = this._baseURL;
+		try
+		{
+			if (this._remoteAccess)
+			{
+				baseURL += "/route";
+				await this.refreshToken();
+			}
+			req = this.request(`https://${baseURL}/clip/v2/resource`);
+			req.setHeader("Accept", "application/json");
+			req.setHeader("hue-application-key", this._appKey);
+			if (this._remoteAccess)
+				req.setHeader("Authorization", `Bearer ${this._remoteAccess.access_token}`);
+			else
+				req.setStrictSSL(false);
+			result = await req.execute();
+			if (result.statusCode != 200)
+				throw new Error(result.statusMessage);
+			this.addResources(result.data);
+			for (const id in this._resources)
+				if (!result.data.data.find(resource => `${resource.type}/${resource.id}` == this._resources[id]._id))
+					this._resources[id]._alive = false;
+			this.deleteResources();
+			this._connected = true;
+			return (true);
+		}
+		catch (error)
+		{
+			this.emit("connection_error", error);
+			return (false);
+		}
+	}
+
+	addResources(resources)
+	{
+		let devices, groups, scenes, services;
+
+		devices = resources.data.filter(device => device.type.toLowerCase() == "device");
+		groups = resources.data.filter(group => ["zone", "room", "bridge_home"].includes(group.type.toLowerCase()));
+		scenes = resources.data.filter(device => device.type.toLowerCase() == "scene");
+		services = resources.data.filter(service => !["device", "zone", "room", "bridge_home", "scene"].includes(service.type.toLowerCase()));
+		devices?.forEach?.(resource => this.setResource(resource, services));
+		groups?.forEach?.(resource => this.setResource(resource, services));
+		scenes?.forEach?.(resource => this.setResource(resource, services));
+		services?.forEach?.(resource => this.setResource(resource, services));
+	}
+
+	deleteResources()
+	{
+		for (const id in this._resources)
+		{
+			if (!this._resources[id]._alive)
+			{
+				this._resources[id]._delete();
+				delete this._resources[id];
+			}
+		}
+	}
+
+	setResource(data, list)
+	{
 		let resource;
 		let service;
-		let uid;
+		let group;
 		let mappingServices = (data, index) =>
 		{
 			let service;
@@ -259,7 +401,7 @@ export default class Bridge extends Device
 
 			index = list.findIndex(data => `${data.type}/${data.id}` == uid);
 			data = (index >= 0) ? list.splice(index, 1)[0] : data;
-			if (!this._resources.all[uid])
+			if (!this._resources[uid])
 			{
 				switch (data.type ?? data.rtype)
 				{
@@ -286,11 +428,19 @@ export default class Bridge extends Device
 					default:
 						service = new Service(this); break;
 				}
-				service._setData(data);
-				this._resources.all[service._id] = this._resources.service[service._id] = service;	
+				this._resources[uid] = service;	
 			}
 			else
-				service = this._resources.all[uid];
+				service = this._resources[uid];
+			if (data.type)
+			{
+				service._setData(data);
+				if (!service._init)
+				{
+					service._add();
+					service._init = true;
+				}
+			}
 			return (service);
 		}
 
@@ -298,34 +448,55 @@ export default class Bridge extends Device
 		{
 			case Resource.Type.DEVICE:
 			{
-				data.services = data.services?.map?.(mappingServices);
-				if (service = data.services.find(service => service instanceof BridgeService))
-					resource = this._resources.resource[data.id] = this;
+				data.services = data.services?.map(mappingServices);
+				if (this._resources[`device/${data.id}`])
+					resource = this._resources[`device/${data.id}`];
+				else if (service = data.services.find(service => service instanceof BridgeService))
+				{
+					resource = this;
+					this._addService(service);
+				}
 				else if (service = data.services.find(service => service instanceof LightService))
 				{
-					if (service.getCapabilities().every(capability => ["state"].includes(capability)))
-						resource = this._resources.light[data.id] = new Plug(this);
-					else if (service.getCapabilities().every(capability => ["state", "dimming"].includes(capability)))
-						resource = this._resources.light[data.id] = new WhiteBulb(this);
-					else if (service.getCapabilities().every(capability => ["state", "dimming", "color_temperature"].includes(capability)))
-						resource = this._resources.light[data.id] = new WhiteAmbianceBulb(this);
-					else if (service.getCapabilities().every(capability => ["state", "dimming", "color_temperature", "color"].includes(capability)))
-						resource = this._resources.light[data.id] = new WhiteAndColorBulb(this);
-					else if (service.getCapabilities().every(capability => ["state", "dimming", "color"].includes(capability)))
-						resource = this._resources.light[data.id] = new ColorBulb(this);
+					if (this.getLight(data.id))
+						resource = this.getLight(data.id);
+					else if ([...service.getCapabilities().values()].every(capability => ["state"].includes(capability)))
+						resource = new Plug(this);
+					else if ([...service.getCapabilities().values()].every(capability => ["state", "dimming", "effect"].includes(capability)))
+						resource = new WhiteBulb(this);
+					else if ([...service.getCapabilities().values()].every(capability => ["state", "dimming", "color_temperature", "effect"].includes(capability)))
+						resource = new WhiteAmbianceBulb(this);
+					else if ([...service.getCapabilities().values()].every(capability => ["state", "dimming", "color_temperature", "color", "effect"].includes(capability)))
+						resource = new WhiteAndColorBulb(this);
+					else if ([...service.getCapabilities().values()].every(capability => ["state", "dimming", "color", "effect"].includes(capability)))
+						resource = new ColorBulb(this);
 					else
-						resource = this._resources.light[data.id] = new Light(this);
+						resource = new Light(this);
 				}
 				else if (service = data.services.find(service => service instanceof MotionService))
-					resource = this._resources.motion[data.id] = new MotionSensor(this);
+				{
+					if (this.getMotionSensor(data.id))
+						resource = this.getMotionSensor(data.id);
+					else
+						resource = new MotionSensor(this);
+				}
 				else if (service = data.services.find(service => service instanceof ButtonService))
 				{
-					resource = this._resources.switch[data.id] = new Switch(this);
+					if (this.getSwitch(data.id))
+						resource = this.getSwitch(data.id);
+					else
+						resource = new Switch(this);
 				}
 				else
-					resource = this._resources.device[data.id] = new Device(this);
-				resource._setData(data);				
-				this._resources.all[resource._id] = resource;
+					resource = new Device(this);
+				resource._setData(data);
+				if (!resource._init)
+				{
+					resource._add();
+					resource._init = true;
+				}
+				if (!(resource instanceof Bridge))
+					this._resources[resource._id] ??= resource;
 				break;
 			}
 			case Resource.Type.ZONE:
@@ -334,20 +505,47 @@ export default class Bridge extends Device
 			{
 				data.services = data.services?.map?.(mappingServices);
 				data.children = data.children?.map?.(mappingServices);
-				if (data.type == Resource.Type.ROOM)
-					resource = this._resources.group[data.id] = new Room(this);
+				if (this.getGroup(data.id))
+					resource = this.getGroup(data.id);
+				else if (data.type == Resource.Type.ROOM)
+					resource = new Room(this);
 				else if (data.type == Resource.Type.ZONE)
-					resource = this._resources.group[data.id] = new Zone(this);
+					resource = new Zone(this);
 				else if (data.type == Resource.Type.BRIDGE_HOME)
-					resource = this._bridgeHome = new BridgeHome(this);
+					resource = this._bridgeHome ??= new BridgeHome(this);
+				else
+					resource = new Group(this);
 				resource._setData(data);
-				this._resources.all[resource._id] = resource;
+				if (!resource._init)
+				{
+					resource._add();
+					resource._init = true;
+				}
+				this._resources[resource._id] ??= resource;
+				break;
+			}
+			case Resource.Type.SCENE:
+			{
+				group = this.getGroup(data.group.rid);
+				if (this.getScene(data.id))
+					resource = this.getScene(data.id);
+				else
+					resource = new Scene(this);
+				resource._setData(data);
+				resource._setGroup(group);
+				group._addScene(resource);
+				if (!resource._init)
+				{
+					resource._add();
+					resource._init = true;
+				}
+				this._resources[resource._id] ??= resource;
 				break;
 			}
 			default:
 			{
 				resource = new Resource(this, data);
-				this._resources.all[resource._id] ??= this._resources.resource[resource._id] ??= resource;
+				this._resources[resource._id] ??= resource;
 				break;
 			}
 		}
@@ -355,11 +553,16 @@ export default class Bridge extends Device
 
 	/**
 	 * 
-	 * @returns {Bridge.State} The state of bridge connection
+	 * @returns {Bridge.State[keyof Bridge.State]} The state of bridge connection
 	 */
 	getState()
-	{return (this._request.getState())}
+	{return (this._stream.getState())}
 
+	/**
+	 * Returns the bridge ID
+	 * 
+	 * @returns {string}
+	 */
 	getBridgeID()
 	{return (this._bridgeData.getID())}
 
@@ -369,15 +572,33 @@ export default class Bridge extends Device
 	 * @returns {Light[]} The list of Light
 	 */
 	getLights()
-	{return (Object.values(this._resources.light))}
+	{return (Object.values(this._resources).filter(resource => resource instanceof Light))}
+
+	/**
+	 * Gets light from ID
+	 * 
+	 * @param {string} id The ID
+	 * @returns {Light} The list of Light
+	 */
+	getLight(id)
+	{return (this._resources[`device/${id}`])}
 
 	/**
 	 * Gets the list of motion sensor
 	 * 
 	 * @returns {MotionSensor[]} The list of MotionSensor
 	 */
-	getMotions()
-	{return (Object.values(this._resources.motion))}
+	getMotionSensors()
+	{return (Object.values(this._resources).filter(resource => resource instanceof MotionSensor))}
+
+	/**
+	 * Gets motion sensor from ID
+	 * 
+	 * @param {string} id The ID
+	 * @returns {MotionSensor} The list of MotionSensor
+	 */
+	getMotionSensor(id)
+	{return (this._resources[`device/${id}`])}
 
 	/**
 	 * Gets the list of switch
@@ -385,7 +606,16 @@ export default class Bridge extends Device
 	 * @returns {Switch[]} The list of Switch
 	 */
 	getSwitches()
-	{return (Object.values(this._resources.switch))}
+	{return (Object.values(this._resources).filter(resource => resource instanceof Switch))}
+
+	/**
+	 * Gets switch from ID
+	 * 
+	 * @param {string} id The ID
+	 * @returns {Switch} The Switch
+	 */
+	getSwitch(id)
+	{return (this._resources[`device/${id}`])}
 
 	/**
 	 * Gets the list of group
@@ -393,7 +623,7 @@ export default class Bridge extends Device
 	 * @returns {Group[]} The list of Group
 	 */
 	getGroups()
-	{return (Object.values(this._resources.group))}
+	{return (Object.values(this._resources).filter(resource => resource instanceof Group))}
 
 	/**
 	 * Gets group from ID
@@ -402,17 +632,34 @@ export default class Bridge extends Device
 	 * @returns {Group} The Group if exists, otherwise undefined
 	 */
 	getGroup(id)
-	{return (this._resources.group[id])}
+	{return (this._resources[`room/${id}`] ?? this._resources[`zone/${id}`])}
+
+	 /**
+	 * Gets the list of scene
+	 * 
+	 * @returns {Scene[]} The list of Group
+	 */
+	getScenes()
+	{return (Object.values(this._resources).filter(resource => resource instanceof Scene))}
+
+	/**
+	 * Gets scene from ID
+	 * 
+	 * @param {string} id The ID
+	 * @returns {Scene} The Group
+	 */
+	getScene(id)
+	{return (this._resources[`device/${id}`])}
 
 	describe()
 	{
 		this.getGroups().forEach(group =>
 		{
 			console.log(`${group.getName()} (${group.getObjectType()}) :`);
-			group.getLights().forEach(light =>
-			{
-				console.log(`    - ${light.getName()} (${light.getObjectType()})`);
-			})
+			console.log(`    - Scenes (${group.getScenes().length} element(s))`);
+			group.getScenes().forEach(scene => console.log(`         - ${scene.getName()}`))
+			console.log(`    - Devices (${group.getDevices().length} element(s))`);
+			group.getDevices().forEach(device => console.log(`         - ${device.getName()} (${device.getObjectType()})`))
 			console.log();
 		})
 	}

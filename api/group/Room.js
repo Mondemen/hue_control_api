@@ -1,3 +1,7 @@
+import { checkParam } from "../../utils/index.js";
+import Device from "../Device.js";
+import Light from "../light/Light.js";
+import Resource from "../Resource.js";
 import LightService from "../service/LightService.js";
 import Group from "./Group.js";
 
@@ -8,25 +12,16 @@ export default class Room extends Group
 		super(bridge, data);
 	}
 
-	convertOldData(id, data, services)
-	{
-		let result = super.convertOldData(id, data, services);
-		let resource;
-
-		result.children = result.children.map(child =>
-		{
-			resource = this._bridge?._resources?.all?.[`${child.rtype}/${child.rid}`];
-			if (resource && resource.getOwner())
-				return ({rid: resource.getOwner().getID(), rtype: resource.getOwner().getType()})
-			return (child);
-		})
-		return (result);
-	}
 	_setData(data, update = false)
 	{
-		Object.values(this._light ?? {}).forEach(light => light.setRoom(undefined));
-		this._light = {};
 		super._setData(data, update);
+		data?.children?.forEach(child =>
+		{
+			if (!(child instanceof Resource))
+				child = this._bridge?._resources?.[`${child.type ?? child.rtype}/${child.id ?? child.rid}`];
+			if (child instanceof Resource)
+				this._addService(child);
+		});
 	}
 
 	_addService(service)
@@ -36,14 +31,20 @@ export default class Room extends Group
 		{
 			service = service.getOwner();
 			service?.setRoom?.(this);
-			this._light[service.getID()] = service;
+			this._addDevice(service);
+		}
+		else if (service instanceof Device)
+		{
+			service?._setRoom?.(this);
+			this._addDevice(service);
 		}
 	}
 
-	addLight(light)
+	addDevice(device)
 	{
-		if (light?.getRoom?.()?.getName?.())
-			throw new Error(`The device '${light.getName()}' is already in a room`);
-		super.addLight(light);
+		checkParam(this, "addDevice", "device", device, Device);
+		if (device?.getRoom?.()?.getName?.())
+			throw new Error(`The device '${device.getName()}' is already in a room`);
+		super.addDevice(device);
 	}
 }
