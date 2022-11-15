@@ -1,6 +1,5 @@
 import { checkParam } from "../../utils/index.js";
 import Device from "../Device.js";
-import Light from "../light/Light.js";
 import Resource from "../Resource.js";
 import LightService from "../service/LightService.js";
 import Group from "./Group.js";
@@ -12,9 +11,9 @@ export default class Room extends Group
 		super(bridge, data);
 	}
 
-	_setData(data, update = false)
+	_setData(data)
 	{
-		super._setData(data, update);
+		super._setData(data);
 		data?.children?.forEach(child =>
 		{
 			if (!(child instanceof Resource))

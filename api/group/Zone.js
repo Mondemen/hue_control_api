@@ -10,9 +10,9 @@ export default class Zone extends Group
 		super(bridge, data);
 	}
 
-	_setData(data, update = false)
+	_setData(data)
 	{
-		super._setData(data, update);
+		super._setData(data);
 		data?.children?.forEach?.(light =>
 		{
 			if (!(light instanceof Resource))

@@ -14,9 +14,9 @@ export default class BridgeHome extends Group
 		super(bridge, data);
 	}
 
-	_setData(data, update = false)
+	_setData(data)
 	{
-		super._setData(data, update);
+		super._setData(data);
 		data?.services?.forEach?.(service =>
 		{
 			if (!(service instanceof Resource))

@@ -22,9 +22,9 @@ export default class Device extends Resource
 		super(bridge, data);
 	}
 
-	_setData(data, update = false)
+	_setData(data)
 	{
-		super._setData(data, update);
+		super._setData(data);
 		if (this._data.name != data?.metadata?.name)
 		{
 			this._data.name = data?.metadata?.name;

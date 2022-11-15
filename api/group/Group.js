@@ -54,19 +54,17 @@ export default class Group extends Resource
 		})
 	}
 
-	_setData(data, update = false)
+	/**
+	 * @param {*} data 
+	 * @protected
+	 */
+	_setData(data)
 	{
-		super._setData(data, update);
+		super._setData(data);
 		if (this._data.name != data?.metadata?.name)
-		{
-			this._data.name = data?.metadata?.name;
-			this.emit("name", this._data.name);
-		}
+			this.emit("name", this._data.name = data?.metadata?.name);
 		if (this._data.archetype != data?.metadata?.archetype)
-		{
-			this._data.archetype = data?.metadata?.archetype;
-			this.emit("archetype", this._data.archetype);
-		}
+			this.emit("archetype", this._data.archetype = data?.metadata?.archetype);
 		data?.services?.forEach(service =>
 		{
 			if (!(service instanceof Resource))
@@ -84,7 +82,7 @@ export default class Group extends Resource
 
 	/**
 	 * @returns {Object}
-	 * @private
+	 * @protected
 	 */
 	_getFullData()
 	{
@@ -101,8 +99,8 @@ export default class Group extends Resource
 	/**
 	 * Add GroupLightService
 	 * 
-	 * @private
 	 * @param {GroupLightService} service The service
+	 * @protected
 	 */
 	_addService(service)
 	{
@@ -118,7 +116,7 @@ export default class Group extends Resource
 	 * Add Scene
 	 * 
 	 * @param {Scene} scene The scene
-	 * @private
+	 * @protected
 	 */
 	_addScene(scene)
 	{
@@ -130,7 +128,7 @@ export default class Group extends Resource
 	 * Delete Scene
 	 * 
 	 * @param {Scene|string} scene The scene
-	 * @private
+	 * @protected
 	 */
 	_deleteScene(scene)
 	{delete this._scenes[scene?.getID?.() ?? scene]}
@@ -139,7 +137,7 @@ export default class Group extends Resource
 	 * Add Device
 	 * 
 	 * @param {Device} device The device
-	 * @private
+	 * @protected
 	 */
 	_addDevice(device)
 	{
@@ -151,7 +149,7 @@ export default class Group extends Resource
 	 * Delete Device
 	 * 
 	 * @param {Device|string} device The device
-	 * @private
+	 * @protected
 	 */
 	_deleteDevice(device)
 	{delete this._devices[device?.getID?.() ?? device]}

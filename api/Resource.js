@@ -1,3 +1,4 @@
+// import util from "util";
 import ErrorCodes from "../lib/error/ErrorCodes.js";
 import EventEmitter from "../lib/EventEmitter.js";
 
@@ -45,34 +46,34 @@ export default class Resource extends EventEmitter
 
 	/**
 	 * @type {Bridge}
-	 * @private
+	 * @protected
 	 */
 	_bridge;
-	/** @private */
+	/** @protected */
 	_type;
-	/** @private */
+	/** @protected */
 	_typeV1;
-	/** @private */
+	/** @protected */
 	_id;
-	/** @private */
+	/** @protected */
 	_data = {};
-	/** @private */
+	/** @protected */
 	_prepareUpdate = false;
-	/** @private */
+	/** @protected */
 	_create = {};
-	/** @private */
+	/** @protected */
 	_createV1 = {};
-	/** @private */
+	/** @protected */
 	_updatedService = {};
-	/** @private */
+	/** @protected */
 	_update = {};
-	/** @private */
+	/** @protected */
 	_updateV1 = {};
-	/** @private */
+	/** @protected */
 	_exists = true;
-	/** @private */
+	/** @protected */
 	_alive = false;
-	/** @private */
+	/** @protected */
 	_called = false;
 
 	constructor(bridge, data)
@@ -100,7 +101,7 @@ export default class Resource extends EventEmitter
 	}
 
 	/**
-	 * @private
+	 * @protected
 	 */
 	_setData(data)
 	{
@@ -186,7 +187,7 @@ export default class Resource extends EventEmitter
 	}
 
 	/**
-	 * @private
+	 * @protected
 	 */
 	_eventStart()
 	{
@@ -198,7 +199,7 @@ export default class Resource extends EventEmitter
 	}
 
 	/**
-	 * @private
+	 * @protected
 	 */
 	_eventEnd(bridge = this._bridge)
 	{
@@ -317,7 +318,7 @@ export default class Resource extends EventEmitter
 		{
 			if (this._bridge._remoteAccess)
 				baseURL += "/route";
-			// console.log("UPDATE", `https://${this._bridge._baseURL}/clip/v2/resource/${this._id}`, this._update);
+			// console.log("UPDATE", `https://${this._bridge._baseURL}/clip/v2/resource/${this._id}`, util.inspect(this._update, false, null, true));
 			request = this._bridge.request(`https://${baseURL}/clip/v2/resource/${this._id}`).put();
 			request.setHeader("hue-application-key", this._bridge._appKey);
 			if (this._bridge._remoteAccess)

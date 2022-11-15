@@ -207,8 +207,8 @@ export default class Bridge extends Device
 								return;
 							resourceObj = this._resources[`${resource.type}/${resource.id}`];
 							resourceObj._eventStart();
-							resourceObj._setData(resource, true);
-							resourceObj.emit("change");
+							resourceObj._setData(resource);
+							resourceObj.emit("update", resource);
 						})
 						break;
 					}
@@ -475,16 +475,12 @@ export default class Bridge extends Device
 				}
 				else if (service = data.services.find(service => service instanceof MotionService))
 				{
-					if (this.getMotionSensor(data.id))
-						resource = this.getMotionSensor(data.id);
-					else
+					if (!(resource = this.getMotionSensor(data.id)))
 						resource = new MotionSensor(this);
 				}
 				else if (service = data.services.find(service => service instanceof ButtonService))
 				{
-					if (this.getSwitch(data.id))
-						resource = this.getSwitch(data.id);
-					else
+					if (!(resource = this.getSwitch(data.id)))
 						resource = new Switch(this);
 				}
 				else
@@ -527,9 +523,7 @@ export default class Bridge extends Device
 			case Resource.Type.SCENE:
 			{
 				group = this.getGroup(data.group.rid);
-				if (this.getScene(data.id))
-					resource = this.getScene(data.id);
-				else
+				if (!(resource = this.getScene(data.id)))
 					resource = new Scene(this);
 				resource._setData(data);
 				resource._setGroup(group);
