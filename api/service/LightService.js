@@ -3,6 +3,7 @@ import Mired from "../../lib/Mired.js"
 import Color from "../../lib/Color.js"
 import LightData from "../../lib/LightData.js";
 import { checkParam } from "../../utils/index.js";
+import Gradient from "../../lib/Gradient.js";
 
 /**
  * @typedef {import("../../lib/Color.js").ColorValue} ColorValue
@@ -20,6 +21,8 @@ export default class LightService extends Service
 
 	/** @type {Set<LightService.Capabilities>} */
 	_capabilities = new Set();
+	/** @type {Gradient} */
+	_gradient;
 
 	constructor(bridge, data)
 	{
@@ -77,6 +80,11 @@ export default class LightService extends Service
 			this.emit("effect", this._data.effect = effect);
 		if (Array.isArray(data?.effects?.status_values) && this._data.effectList != data?.effects?.status_values)
 			this.emit("effect_list", this._data.effectList = [...data?.effects?.status_values]);
+		if (data?.gradient)
+		{
+			this._gradient ??= new Gradient(this);
+			this._gradient._setData(data);
+		}
 	}
 
 	getName()
@@ -390,5 +398,19 @@ export default class LightService extends Service
 			return (sender);
 		}
 		return (this.update());
+	}
+
+	getGradient(sender = this)
+	{
+		this._gradient ??= new Gradient(this);
+		this._gradient._sender = sender;
+		return (this._gradient);
+	}
+
+	async update()
+	{
+		if (this._gradient)
+			this._update = {...this._update, ...this._gradient._getData()};
+		await super.update();
 	}
 }

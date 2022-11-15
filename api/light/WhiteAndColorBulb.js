@@ -27,4 +27,7 @@ export default class WhiteAndColorBulb extends WhiteAmbianceBulb
 	 */
 	setColor(color)
 	{return (this._light.setColor(color, this))}
+	
+	getGradient()
+	{return (this._light.getGradient(this))}
 }
