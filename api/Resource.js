@@ -52,6 +52,8 @@ export default class Resource extends EventEmitter
 	/** @protected */
 	_type;
 	/** @protected */
+	_init = false;
+	/** @protected */
 	_typeV1;
 	/** @protected */
 	_id;
@@ -123,7 +125,10 @@ export default class Resource extends EventEmitter
 	 * @private
 	 */
 	_add()
-	{this._bridge?.emit("add_resource", this)}
+	{
+		this._bridge?.emit("add_resource", this);
+		this._init = true;
+	}
 
 	/**
 	 * @private

@@ -38,7 +38,7 @@ export default class Bridge extends Device
 {
 	/**
 	 * State of connection
-	 * 
+	 *
 	 * @enum {string}
 	 * @readonly
 	 */
@@ -120,7 +120,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Object represents Philips Hue bridge
-	 * 
+	 *
 	 * @param {string} baseURL IP or URL of the bridge
 	 * @param {string} appKey The application key
 	 * @param {*} remoteAccess Remote access data
@@ -149,7 +149,7 @@ export default class Bridge extends Device
 	{return (this._consumeEvents)}
 
 	/**
-	 * 
+	 *
 	 * @param {string} url The URL of the request
 	 * @returns {Request}
 	 */
@@ -158,7 +158,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Add bridge service
-	 * 
+	 *
 	 * @private
 	 * @param {BridgeService} service The bridge service
 	 */
@@ -253,7 +253,7 @@ export default class Bridge extends Device
 	// {
 	// 	let url = `https://${this._baseURL}/api/${this._appKey}${this.getOldID()}`;
 	// 	let groups = {}, groupedLightServices = {}, lightServices = {};
-		
+
 	// 	if (!this._streamEnabled)
 	// 		return;
 	// 	try
@@ -428,7 +428,7 @@ export default class Bridge extends Device
 					default:
 						service = new Service(this); break;
 				}
-				this._resources[uid] = service;	
+				this._resources[uid] = service;
 			}
 			else
 				service = this._resources[uid];
@@ -436,10 +436,7 @@ export default class Bridge extends Device
 			{
 				service._setData(data);
 				if (!service._init)
-				{
 					service._add();
-					service._init = true;
-				}
 			}
 			return (service);
 		}
@@ -487,10 +484,7 @@ export default class Bridge extends Device
 					resource = new Device(this);
 				resource._setData(data);
 				if (!resource._init)
-				{
 					resource._add();
-					resource._init = true;
-				}
 				if (!(resource instanceof Bridge))
 					this._resources[resource._id] ??= resource;
 				break;
@@ -513,10 +507,7 @@ export default class Bridge extends Device
 					resource = new Group(this);
 				resource._setData(data);
 				if (!resource._init)
-				{
 					resource._add();
-					resource._init = true;
-				}
 				this._resources[resource._id] ??= resource;
 				break;
 			}
@@ -529,10 +520,7 @@ export default class Bridge extends Device
 				resource._setGroup(group);
 				group._addScene(resource);
 				if (!resource._init)
-				{
 					resource._add();
-					resource._init = true;
-				}
 				this._resources[resource._id] ??= resource;
 				break;
 			}
@@ -546,7 +534,7 @@ export default class Bridge extends Device
 	}
 
 	/**
-	 * 
+	 *
 	 * @returns {Bridge.State[keyof Bridge.State]} The state of bridge connection
 	 */
 	getState()
@@ -554,7 +542,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Returns the bridge ID
-	 * 
+	 *
 	 * @returns {string}
 	 */
 	getBridgeID()
@@ -562,7 +550,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Gets the list of light
-	 * 
+	 *
 	 * @returns {Light[]} The list of Light
 	 */
 	getLights()
@@ -570,7 +558,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Gets light from ID
-	 * 
+	 *
 	 * @param {string} id The ID
 	 * @returns {Light} The list of Light
 	 */
@@ -579,7 +567,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Gets the list of motion sensor
-	 * 
+	 *
 	 * @returns {MotionSensor[]} The list of MotionSensor
 	 */
 	getMotionSensors()
@@ -587,7 +575,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Gets motion sensor from ID
-	 * 
+	 *
 	 * @param {string} id The ID
 	 * @returns {MotionSensor} The list of MotionSensor
 	 */
@@ -596,7 +584,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Gets the list of switch
-	 * 
+	 *
 	 * @returns {Switch[]} The list of Switch
 	 */
 	getSwitches()
@@ -604,7 +592,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Gets switch from ID
-	 * 
+	 *
 	 * @param {string} id The ID
 	 * @returns {Switch} The Switch
 	 */
@@ -613,7 +601,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Gets the list of group
-	 * 
+	 *
 	 * @returns {Group[]} The list of Group
 	 */
 	getGroups()
@@ -621,7 +609,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Gets group from ID
-	 * 
+	 *
 	 * @param {string} id The ID
 	 * @returns {Group} The Group if exists, otherwise undefined
 	 */
@@ -630,7 +618,7 @@ export default class Bridge extends Device
 
 	 /**
 	 * Gets the list of scene
-	 * 
+	 *
 	 * @returns {Scene[]} The list of Group
 	 */
 	getScenes()
@@ -638,7 +626,7 @@ export default class Bridge extends Device
 
 	/**
 	 * Gets scene from ID
-	 * 
+	 *
 	 * @param {string} id The ID
 	 * @returns {Scene} The Group
 	 */
