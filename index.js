@@ -7,6 +7,8 @@ export {default as Connector} from "./lib/Connector.js";
 export {default as Color} from "./lib/Color.js";
 export {default as Mired} from "./lib/Mired.js";
 export {default as Palette} from "./lib/Palette.js";
+export {default as Gradient} from "./lib/Gradient.js";
+export {default as Powerup} from "./lib/Powerup.js";
 export {default as SceneAction} from "./lib/SceneAction.js";
 
 export {default as Bulb} from "./api/light/Bulb.js";
