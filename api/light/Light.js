@@ -70,7 +70,7 @@ export default class Light extends Device
 
 	/**
 	 * Add zone to this light
-	 * 
+	 *
 	 * @param {Zone} zone - The zone
 	 * @private
 	 */
@@ -79,7 +79,7 @@ export default class Light extends Device
 
 	/**
 	 * Delete zone to this light
-	 * 
+	 *
 	 * @param {Zone|string} zone - The zone or his ID
 	 * @private
 	 */
@@ -102,7 +102,7 @@ export default class Light extends Device
 
 	/**
 	 * Gets the name
-	 * 
+	 *
 	 * @returns {string} The name
 	 */
 	getName()
@@ -110,7 +110,7 @@ export default class Light extends Device
 
 	/**
 	 * Gets the list of capabilities
-	 * 
+	 *
 	 * @returns {Set<Light.Capabilities[keyof typeof Light.Capabilities]>} The list of capabilities
 	 */
 	getCapabilities()
@@ -118,7 +118,7 @@ export default class Light extends Device
 
 	/**
 	 * Gets the current mode of the light
-	 * 
+	 *
 	 * @returns {Light.Mode[keyof typeof Light.Mode]} The mode
 	 */
 	getMode()
@@ -132,7 +132,7 @@ export default class Light extends Device
 
 	/**
 	 * Gets the current connectivity status
-	 * 
+	 *
 	 * @returns {Light.Status[keyof typeof Light.Status]} The status
 	 */
 	getStatus()
@@ -140,7 +140,7 @@ export default class Light extends Device
 
 	/**
 	 * Gets the state of light
-	 * 
+	 *
 	 * @returns {Light.State[keyof typeof Light.State]} The state of light
 	 */
 	getState()
@@ -148,7 +148,7 @@ export default class Light extends Device
 
 	/**
 	 * Set state of light
-	 * 
+	 *
 	 * @param {Light.State[keyof typeof Light.State]} state The state
 	 * @returns {Light|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
@@ -157,7 +157,7 @@ export default class Light extends Device
 
 	/**
 	 * Turn on the light
-	 * 
+	 *
 	 * @param {Light.State[keyof typeof Light.State]} state The state
 	 * @returns {Light|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
@@ -166,10 +166,13 @@ export default class Light extends Device
 
 	/**
 	 * Turn off the light
-	 * 
+	 *
 	 * @param {Light.State[keyof typeof Light.State]} state The state
 	 * @returns {Light|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
 	turnOff()
 	{return (this._light.setState(Light.State.OFF, this))}
+
+	getPowerup()
+	{return (this._light.getPowerup(this))}
 }

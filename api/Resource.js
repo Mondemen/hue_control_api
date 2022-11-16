@@ -1,4 +1,4 @@
-// import util from "util";
+import util from "util";
 import ErrorCodes from "../lib/error/ErrorCodes.js";
 import EventEmitter from "../lib/EventEmitter.js";
 
@@ -10,7 +10,7 @@ export default class Resource extends EventEmitter
 {
 	/**
 	 * Type of resource
-	 * 
+	 *
 	 * @enum {string}
 	 * @readonly
 	 */
@@ -118,7 +118,7 @@ export default class Resource extends EventEmitter
 	 */
 	_getFullData()
 	{return ({})}
-	
+
 	/**
 	 * @private
 	 */
@@ -136,7 +136,7 @@ export default class Resource extends EventEmitter
 
 	/**
 	 * Gets the bridge of resource
-	 * 
+	 *
 	 * @returns {Bridge} The bridge of resource
 	 */
 	getBridge()
@@ -144,7 +144,7 @@ export default class Resource extends EventEmitter
 
 	/**
 	 * Gets the ID of resource
-	 * 
+	 *
 	 * @returns {string} The ID of resource
 	 */
 	getID()
@@ -152,7 +152,7 @@ export default class Resource extends EventEmitter
 
 	/**
 	 * Gets the old ID of resource
-	 * 
+	 *
 	 * @returns {string} The old ID of resource
 	 */
 	getOldID()
@@ -160,15 +160,15 @@ export default class Resource extends EventEmitter
 
 	/**
 	 * Gets the type of resource
-	 * 
+	 *
 	 * @returns {Resource.Type[keyof typeof Resource.Type]} The type of resource
 	 */
 	getType()
 	{return (this._data.type)}
-	
+
 	/**
 	 * Check if this resource exists in bridge
-	 * 
+	 *
 	 * @returns {boolean}
 	 */
 	isExists()
@@ -232,6 +232,8 @@ export default class Resource extends EventEmitter
 	{
 		let messages = response?.data?.errors?.map(error => error.description) ?? [];
 
+		if (messages.length)
+			console.warn(messages);
 		if (Object.values(ErrorCodes.http).includes(response?.statusCode))
 			throw {code: response.statusCode, message: messages};
 	}
@@ -297,7 +299,7 @@ export default class Resource extends EventEmitter
 		if (this._bridge._remoteAccess)
 			request.setHeader("Authorization", `Bearer ${this._bridge._remoteAccess.access_token}`);
 		else
-			request.setStrictSSL(false);		
+			request.setStrictSSL(false);
 		this._prepareUpdate = false;
 		response = await request.execute();
 		this._errorManager(response);
@@ -319,6 +321,7 @@ export default class Resource extends EventEmitter
 			if (this._bridge._remoteAccess)
 				baseURL += "/route";
 			// console.log("UPDATE", `https://${this._bridge._baseURL}/clip/v2/resource/${this._id}`, util.inspect(this._update, false, null, true));
+			// return;
 			request = this._bridge.request(`https://${baseURL}/clip/v2/resource/${this._id}`).put();
 			request.setHeader("hue-application-key", this._bridge._appKey);
 			if (this._bridge._remoteAccess)
@@ -350,6 +353,7 @@ export default class Resource extends EventEmitter
 				if (type)
 					url += `/${type}`;
 				// console.log("UPDATE V1", url, data);
+				// return;
 				request = this._bridge.request(url).put();
 				if (this._bridge._remoteAccess)
 					request.setHeader("Authorization", `Bearer ${this._bridge._remoteAccess.access_token}`);

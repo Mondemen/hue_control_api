@@ -4,6 +4,7 @@ import Color from "../../lib/Color.js"
 import LightData from "../../lib/LightData.js";
 import { checkParam } from "../../utils/index.js";
 import Gradient from "../../lib/Gradient.js";
+import Powerup from "../../lib/Powerup.js";
 
 /**
  * @typedef {import("../../lib/Color.js").ColorValue} ColorValue
@@ -23,6 +24,8 @@ export default class LightService extends Service
 	_capabilities = new Set();
 	/** @type {Gradient} */
 	_gradient;
+	/** @type {Powerup} */
+	_powerup;
 
 	constructor(bridge, data)
 	{
@@ -85,6 +88,11 @@ export default class LightService extends Service
 			this._gradient ??= new Gradient(this);
 			this._gradient._setData(data);
 		}
+		if (data?.powerup)
+		{
+			this._powerup ??= new Powerup(this);
+			this._powerup._setData(data);
+		}
 	}
 
 	getName()
@@ -92,7 +100,7 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the list of capabilities
-	 * 
+	 *
 	 * @returns {Set<LightService.Capabilities>} The list of capabilities
 	 */
 	getCapabilities()
@@ -100,7 +108,7 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the state of light
-	 * 
+	 *
 	 * @returns {LightService.State} The state of light
 	 */
 	getState()
@@ -108,7 +116,7 @@ export default class LightService extends Service
 
 	/**
 	 * Set state of light
-	 * 
+	 *
 	 * @param {LightService.State[keyof typeof LightService.State]} state The state
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
@@ -123,10 +131,10 @@ export default class LightService extends Service
 		}
 		return (this.update());
 	}
-	
+
 	/**
 	 * Gets the minimum brightness accepted by the light
-	 * 
+	 *
 	 * @returns {number} The minimum brightness
 	 */
 	getMinBrightness()
@@ -134,7 +142,7 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the brightness of light
-	 * 
+	 *
 	 * @returns {number} The brightness of light
 	 */
 	getBrightness()
@@ -142,7 +150,7 @@ export default class LightService extends Service
 
 	/**
 	 * Set brightness of light
-	 * 
+	 *
 	 * @param {number} brightness The brightness
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
@@ -163,7 +171,7 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the minimal color temperature of light
-	 * 
+	 *
 	 * @returns {Mired} Returns the minimal color temperture
 	 * @throws {ArgumentError}
 	 */
@@ -172,7 +180,7 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the maximal color temperature of light
-	 * 
+	 *
 	 * @returns {Mired} Returns the maximal color temperture
 	 * @throws {ArgumentError}
 	 */
@@ -181,7 +189,7 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the color temperature of light
-	 * 
+	 *
 	 * @returns {Mired} Returns The color temperture
 	 * @throws {ArgumentError}
 	 */
@@ -190,7 +198,7 @@ export default class LightService extends Service
 
 	/**
 	 * Sets the color temperature of light
-	 * 
+	 *
 	 * @param {Mired|Color|ColorValue|number} mired The color temperature
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
@@ -211,8 +219,8 @@ export default class LightService extends Service
 	{return (this._data.colorGamut)}
 
 	/**
-	 * Gets the color temperature of light
-	 * 
+	 * Gets the color of light
+	 *
 	 * @returns {Color} Returns the color
 	 */
 	getColor()
@@ -226,7 +234,7 @@ export default class LightService extends Service
 
 	/**
 	 * Sets the color of light
-	 * 
+	 *
 	 * @param {Color|ColorValue} color The color
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
@@ -245,7 +253,7 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the dynamic scene speed
-	 * 
+	 *
 	 * @returns {number} The speed of dynamic scene, between 0 and 100
 	 */
 	getDynamicSpeed()
@@ -253,7 +261,7 @@ export default class LightService extends Service
 
 	/**
 	 * Sets the dynamic scene speed
-	 * 
+	 *
 	 * @param {number} speed The speed value between 0 and 100
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
@@ -276,15 +284,15 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the dynamic scene status
-	 * 
+	 *
 	 * @returns {LightService.DynamicStatus} The dynamic scene status
 	 */
 	getDynamicStatus()
 	{return (this._data.dynamicStatus)}
-	 
+
 	/**
 	 * Sets the duration of a light transition or timed effects
-	 * 
+	 *
 	 * @param {number} duration The duration value between 0 and 6000000, duration in ms
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
@@ -305,7 +313,7 @@ export default class LightService extends Service
 
 	/**
 	 * Sets the alert type to the light
-	 * 
+	 *
 	 * @param {LightService.AlertType[keyof typeof LightService.AlertType]} type The type of alert
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
@@ -333,7 +341,7 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the current mode of the light
-	 * 
+	 *
 	 * @returns {LightService.Mode[keyof typeof LightService.Mode]} The mode
 	 */
 	getMode()
@@ -354,7 +362,7 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the list of supported effects of the light
-	 * 
+	 *
 	 * @returns {LightService.Effect[keyof typeof LightService.Effect][]} The effect list
 	 */
 	getEffectList()
@@ -362,7 +370,7 @@ export default class LightService extends Service
 
 	/**
 	 * Check if the effect is supported by the light
-	 * 
+	 *
 	 * @param {LightService.Effect[keyof typeof LightService.Effect]} effect The effect to check
 	 * @returns {boolean} True if the effect is suported otherwise false
 	 */
@@ -375,7 +383,7 @@ export default class LightService extends Service
 
 	/**
 	 * Gets the current effect of the light
-	 * 
+	 *
 	 * @returns {LightService.Effect[keyof typeof LightService.Effect]} The effect
 	 */
 	getEffect()
@@ -383,7 +391,7 @@ export default class LightService extends Service
 
 	/**
 	 * Sets the effect of the light
-	 * 
+	 *
 	 * @param {LightService.Effect[keyof typeof LightService.Effect]} effect The effect
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
@@ -407,10 +415,19 @@ export default class LightService extends Service
 		return (this._gradient);
 	}
 
+	getPowerup(sender = this)
+	{
+		this._powerup ??= new Powerup(this);
+		this._powerup._sender = sender;
+		return (this._powerup);
+	}
+
 	async update()
 	{
 		if (this._gradient)
 			this._update = {...this._update, ...this._gradient._getData()};
+		if (this._powerup)
+			this._update = {...this._update, ...this._powerup._getData()};
 		await super.update();
 	}
 }
