@@ -44,6 +44,6 @@ export default class Room extends Group
 		checkParam(this, "addDevice", "device", device, Device);
 		if (device?.getRoom?.()?.getName?.())
 			throw new Error(`The device '${device.getName()}' is already in a room`);
-		super.addDevice(device);
+		return (super.addDevice(device));
 	}
 }

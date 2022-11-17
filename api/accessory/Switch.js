@@ -4,7 +4,7 @@ import ButtonService from "../service/ButtonService.js";
 
 export default class Switch extends Accessory
 {
-	/** @type {Object.<number,ButtonService>} */
+	/** @type {Object<number,ButtonService>} */
 	_button = {};
 
 	constructor(bridge, data)

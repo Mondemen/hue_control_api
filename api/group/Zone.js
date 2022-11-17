@@ -36,13 +36,13 @@ export default class Zone extends Group
 	addLight(light)
 	{
 		checkParam(this, "addLight", "light", light, Light);
-		super.addDevice(light);
+		return (super.addDevice(light));
 	}
 
 	removeLight(light)
 	{
 		checkParam(this, "removeLight", "light", light, Light);
-		super.removeDevice(light);
+		return (super.removeDevice(light));
 	}
 
 	getLights()
