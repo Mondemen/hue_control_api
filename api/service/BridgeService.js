@@ -7,11 +7,12 @@ export default class BridgeService extends Service
 		super(bridge, data);
 	}
 
-	_setData(data, update = false)
+	_setData(data)
 	{
-		super._setData(data, update);
+		super._setData(data);
 		this._data.id = data?.bridge_id ?? this._data.id;
-		this._data.timezone = data?.time_zone?.time_zone ?? this._data.timezone;
+		if (data?.time_zone?.time_zone)
+			this.emit("timezone", this._data.timezone = data?.time_zone?.time_zone);
 	}
 
 	getBridgeID()

@@ -21,20 +21,14 @@ export default class DevicePowerService extends Service
 	{
 		super._setData(data, update);
 		if (data?.power_state?.battery_state)
-		{
-			this._data.battery_state = data.power_state.battery_state;
-			this.emit("battery_state", this._data.battery_state)
-		}
+			this.emit("battery_state", this._data.battery_state = data.power_state.battery_state);
 		if (data?.power_state?.battery_level)
-		{
-			this._data.battery_level = data.power_state.battery_level;
-			this.emit("battery_level", this._data.battery_level)
-		}
+			this.emit("battery_level", this._data.battery_level = data.power_state.battery_level);
 	}
 
 	/**
 	 * Gets the battery state
-	 * 
+	 *
 	 * @returns {DevicePowerService.BatteryState[keyof typeof DevicePowerService.BatteryState]} The battery state
 	 */
 	getBatteryState()
@@ -42,7 +36,7 @@ export default class DevicePowerService extends Service
 
 	/**
 	 * Gets the battery level
-	 * 
+	 *
 	 * @returns {number} The battery level un percent
 	 */
 	getBatteryLevel()

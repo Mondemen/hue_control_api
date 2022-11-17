@@ -23,15 +23,9 @@ export default class GroupedLightService extends Service
 	{
 		super._setData(data, update);
 		if (data?.on?.on != undefined && this._data.state != data?.on?.on)
-		{
-			this._data.state = data.on.on;
-			this.emit("state", this._data.state);
-		}
+			this.emit("state", this._data.state = data.on.on);
 		if (data?.dimming?.brightness != undefined && this._data.brightness != data?.dimming?.brightness)
-		{
-			this._data.brightness = data.dimming.brightness;
-			this.emit("brightness", this._data.brightness);
-		}
+			this.emit("brightness", this._data.brightness = data.dimming.brightness);
 	}
 
 	_getFullData()
@@ -46,7 +40,7 @@ export default class GroupedLightService extends Service
 
 	/**
 	 * Gets the state of light
-	 * 
+	 *
 	 * @returns {GroupedLightService.State[keyof typeof GroupedLightService.State]} The state of light
 	 */
 	getState()
@@ -54,7 +48,7 @@ export default class GroupedLightService extends Service
 
 	/**
 	 * Set state of light
-	 * 
+	 *
 	 * @param {GroupedLightService.State[keyof typeof GroupedLightService.State]} state The state
 	 * @returns {GroupedLightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
@@ -71,7 +65,7 @@ export default class GroupedLightService extends Service
 
 	/**
 	 * Gets the brightness of grouped light
-	 * 
+	 *
 	 * @returns {number} The brightness of grouped light
 	 */
 	getBrightness()
@@ -79,7 +73,7 @@ export default class GroupedLightService extends Service
 
 	/**
 	 * Set brightness of grouped light
-	 * 
+	 *
 	 * @param {number} brightness The brightness
 	 * @returns {GroupedLightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
@@ -100,7 +94,7 @@ export default class GroupedLightService extends Service
 
 	/**
 	 * Sets the color temperature of grouped light
-	 * 
+	 *
 	 * @param {Mired|Color|ColorValue|number} value The color temperature
 	 * @returns {GroupedLightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
@@ -121,7 +115,7 @@ export default class GroupedLightService extends Service
 
 	/**
 	 * Sets the color of grouped light
-	 * 
+	 *
 	 * @param {Color|ColorValue} value The color
 	 * @returns {GroupedLightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
@@ -140,7 +134,7 @@ export default class GroupedLightService extends Service
 
 	/**
 	 * Sets the alert type to the grouped light
-	 * 
+	 *
 	 * @param {GroupedLightService.AlertType[keyof typeof GroupedLightService.AlertType]} type The type of alert
 	 * @returns {GroupedLightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}

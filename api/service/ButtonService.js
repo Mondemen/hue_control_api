@@ -16,13 +16,12 @@ export default class ButtonService extends Service
 		super(bridge, data);
 	}
 
-	_setData(data, update = false)
+	_setData(data)
 	{
-		super._setData(data, update);
+		super._setData(data);
 		this._data.control_id = data?.metadata?.control_id ?? this._data.control_id;
-		this._data.last_event = data?.button?.last_event ?? this._data.last_event;
-		if (update && data?.button?.last_event)
-			this.emit(data.button.last_event);
+		if (data?.button?.last_event)
+			this.emit("last_event", this._data.control_id, this._data.last_event = data?.button?.last_event);
 	}
 
 	getControlID()

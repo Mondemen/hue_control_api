@@ -4,7 +4,7 @@ export default class ConnectivityService extends Service
 {
 	/**
 	 * The connectivity status
-	 * 
+	 *
 	 * @enum {string}
 	 * @readonly
 	 */
@@ -15,7 +15,7 @@ export default class ConnectivityService extends Service
 		CONNECTIVITY_ISSUE: "connectivity_issue",
 		UNIDIRECTIONAL_INCOMING: "unidirectional_incoming"
 	}
-	
+
 	constructor(bridge, data)
 	{
 		super(bridge, data);
@@ -24,12 +24,13 @@ export default class ConnectivityService extends Service
 	_setData(data, update = false)
 	{
 		super._setData(data, update);
-		this._data.status = data?.status;
-	}	 
+		if (data?.status)
+			this.emit("connectivity_status", this._data.status = data?.status);
+	}
 
 	/**
 	 * Gets the current connectivity status
-	 * 
+	 *
 	 * @returns {ZigbeeConnectivityService.Status} The status
 	 */
 	getStatus()

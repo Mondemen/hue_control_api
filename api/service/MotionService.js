@@ -11,10 +11,7 @@ export default class MotionService extends Service
 	{
 		super._setData(data, update);
 		if (data?.enabled != undefined)
-		{
-			this._data.enabled = data.enabled;
-			this.emit("enabled", this._data.enabled);
-		}
+			this.emit("enabled", this._data.enabled = data.enabled);
 		if (data?.motion?.motion)
 			this.emit("motion");
 	}

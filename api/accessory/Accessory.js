@@ -6,4 +6,16 @@ export default class Accessory extends Device
 	{
 		super(bridge, data);
 	}
+
+	_add()
+	{
+		super._add();
+		this._bridge?.emit("add_accessory", this);
+	}
+
+	_delete()
+	{
+		super._delete();
+		this._bridge?.emit("delete_accessory", this);
+	}
 }

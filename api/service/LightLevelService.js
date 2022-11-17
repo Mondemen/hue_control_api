@@ -11,15 +11,9 @@ export default class LightLevelService extends Service
 	{
 		super._setData(data, update);
 		if (data.enabled != undefined)
-		{
-			this._data.enabled = data.enabled;
-			this.emit("light_level_enabled", this._data.enabled);
-		}
+			this.emit("light_level_enabled", this._data.enabled = data.enabled);
 		if (data?.light?.light_level != undefined)
-		{
-			this._data.light_level = data.light_level;
-			this.emit("light_level", this._data.light_level);
-		}
+			this.emit("light_level", this._data.light_level = data.light_level);
 	}
 
 	isEnabled()
