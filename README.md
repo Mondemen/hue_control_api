@@ -1,5 +1,6 @@
 
 # Hue Control API
+[![npm](https://img.shields.io/npm/v/hue_control_api.svg)](https://www.npmjs.com/package/hue_control_api)
 
 An API library for Node.js that interacts with the Philips Hue bridge to control lights, rooms/zones, scenes and various other features of the Hue bridge using the new V2 API (and some features from V1 quin' have not yet been put on the V2).
 
