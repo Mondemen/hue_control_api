@@ -1,4 +1,4 @@
-import util from "util";
+// import util from "util";
 import ErrorCodes from "../lib/error/ErrorCodes.js";
 import EventEmitter from "../lib/EventEmitter.js";
 
@@ -27,13 +27,13 @@ export default class Resource extends EventEmitter
 		ENTERTAINMENT_CONFIGURATION: "entertainment_configuration",
 		ENTERTAINMENT: "entertainment",
 		GEOFENCE_CLIENT: "geofence_client",
-		GEOFENCE: "geofence",
 		GEOLOCATION: "geolocation",
 		GROUPED_LIGHT: "grouped_light",
 		HOMEKIT: "homekit",
 		LIGHT_LEVEL: "light_level",
 		LIGHT: "light",
 		MOTION: "motion",
+		MATTER: "matter",
 		PUBLIC_IMAGE: "public_image",
 		ROOM: "room",
 		SCENE: "scene",
