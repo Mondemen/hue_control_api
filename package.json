@@ -1,20 +1,23 @@
 {
 	"name": "hue_control_api",
-	"version": "1.0.0",
-	"description": "",
+	"version": "0.1.0",
+	"description": "Philips Hue bridge control API in Node.JS ",
 	"main": "index.js",
+	"types": "index.d.ts",
 	"type": "module",
+	"author": "Mondemen",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Mondemen/hue_control_api"
+	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"author": "",
-	"license": "ISC",
 	"dependencies": {
-		"bonjour": "^3.5.0",
 		"mdns-js": "^1.0.3"
 	},
 	"devDependencies": {
-		"@types/bonjour": "^3.5.10",
 		"typescript": "^4.7.4"
 	}
 }
