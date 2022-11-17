@@ -13,7 +13,7 @@ export default class Scene extends Resource
 {
 	/**
 	 * Image of scene
-	 * 
+	 *
 	 * @enum {string}
 	 * @readonly
 	 */
@@ -64,7 +64,7 @@ export default class Scene extends Resource
 
 	/**
 	 * Sets data
-	 * 
+	 *
 	 * @private
 	 * @param {Object} data The data
 	 */
@@ -74,16 +74,10 @@ export default class Scene extends Resource
 
 		super._setData(data);
 		if (this._data.name != data?.metadata?.name)
-		{
-			this._data.name = data?.metadata?.name;
-			this.emit("name", this._data.name);
-		}
+			this.emit("name", this._data.name = data?.metadata?.name);
 		this._data.image = data?.metadata?.image?.rid ?? this._data.image;
 		if (this._data.auto_dynamic != data?.auto_dynamic)
-		{
-			this._data.auto_dynamic = data.auto_dynamic;
-			this.emit("auto_dynamic", this._data.auto_dynamic);
-		}
+			this.emit("auto_dynamic", this._data.auto_dynamic = data.auto_dynamic);
 		data?.actions?.forEach(action =>
 		{
 			light = this._bridge._resources[`${action.target.rtype}/${action.target.rid}`].getOwner?.();
@@ -113,7 +107,7 @@ export default class Scene extends Resource
 
 	/**
 	 * Sets the group
-	 * 
+	 *
 	 * @private
 	 * @param {Group} group The group
 	 */
@@ -138,6 +132,12 @@ export default class Scene extends Resource
 		return (this._create.metadata?.name);
 	}
 
+	/**
+	 * Set scene name
+	 *
+	 * @param {string} name - The name
+	 * @returns {Scene|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
+	 */
 	setName(name)
 	{
 		let data = (this.isExists()) ? this._update : this._create;
@@ -149,9 +149,34 @@ export default class Scene extends Resource
 		return (this);
 	}
 
+	isAutoDynamic()
+	{return (this._update.auto_dynamic ?? this._data.auto_dynamic)}
+
+	/**
+	 * Set scene name
+	 *
+	 * @param {string} name - The name
+	 * @returns {Scene|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
+	 */
+	setAutoDynamic(value)
+	{
+		let data = (this.isExists()) ? this._update : this._create;
+
+		data.auto_dynamic = value;
+		if (this.isExists() && !this._prepareUpdate)
+			return (this.update());
+		return (this);
+	}
+
 	getImage()
 	{return (this._data.image)}
 
+	/**
+	 * Set scene image
+	 *
+	 * @param {Scene.Image[keyof typeof Scene.Image]} image - The image
+	 * @returns {Scene} Return this object
+	 */
 	setImage(image)
 	{
 		checkParam(this, "setImage", "image", image, Scene.Image, "Scene.Image");
@@ -173,7 +198,7 @@ export default class Scene extends Resource
 
 	/**
 	 * Gets action data from light
-	 * 
+	 *
 	 * @param {Light} light The light
 	 * @returns {SceneAction}
 	 */
@@ -186,7 +211,7 @@ export default class Scene extends Resource
 
 	/**
 	 * Gets the list of actions
-	 * 
+	 *
 	 * @returns {SceneAction[]}
 	 */
 	getActions()
@@ -206,7 +231,7 @@ export default class Scene extends Resource
 			this._palette.addColor(colorLight._data.color.xy, colorLight.getBrightness());
 		if (!this._palette.getColorTemperature() && miredLight)
 			this._palette.setColorTemperature(miredLight.getColorTemperature(), miredLight.getBrightness());
-		this._create = 
+		this._create =
 		{
 			type: this._type,
 			...this._create,
@@ -228,7 +253,7 @@ export default class Scene extends Resource
 		if (!this.isExists())
 			throw {code: ErrorCodes.notExists};
 		await super.delete();
-		this._group._deleteScene(this);
+		this._group?._deleteScene(this);
 	}
 
 	async update()
