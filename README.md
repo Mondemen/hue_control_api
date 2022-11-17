@@ -7,6 +7,7 @@ This library is currently in alpha, the majority of the essential features are a
 
 # Contents
 * [Installation](#installation)
+* [Concept](#concept)
 * [Basic Usage](#basic-usage)
 	* [Connect to Hue Bridge](#connect-to-hue-bridge)
 		* [By discovering](#by-discovering)
@@ -33,9 +34,18 @@ Node.js using npm:
 
     $ npm install hue_control_api
 
+# Concept
+
+The whole library works on the principle of resource and event, all objects are based on the class Resource and the resources send events when a light, room, button, ... is updated on the bridge.
+
+When connecting to through the local network, it is therefore not necessary to do `light.getColor()` for example, using instead `light.on("color", color => console .log(color))`, you would immediately have the up-to-date values.
+
+This system makes it possible to work in real time and to be able to react quickly (like updating a graphic interface for example).
+
 # Basic usage
 
 There are 4 possibilities of connection to a bridge, discovering all bridge available in local network, the direct connection to an IP, by its unique ID through the search for a bridge on the local network or thanks to the remote identifier.
+
 ## Connect to Hue bridge
 
 ### By discovering
