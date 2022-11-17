@@ -8,28 +8,31 @@ export default class MotionSensor extends Accessory
 {
 	static BatteryState = DevicePowerService.BatteryState;
 
-	/** @type {MotionService} */
+	/**
+	 * @type {MotionService}
+	 * @private
+	 */
 	_motion;
-	/** @type {DevicePowerService} */
+	/**
+	 * @type {DevicePowerService}
+	 * @private
+	 */
 	_power;
-	/** @type {LightLevelService} */
+	/**
+	 * @type {LightLevelService}
+	 * @private
+	 */
 	_lightLevel;
-	/** @type {TemperatureService} */
+	/**
+	 * @type {TemperatureService}
+	 * @private
+	 */
 	_temperature
 
 	constructor(bridge, data)
 	{
 		super(bridge, data);
 	}
-
-	/**
-	 * Adds the listener function to the end of the listeners array for the event named eventName
-	 * 
-	 * @param {"motion"|"battery_state"|"battery_level"|"light_level_enabled"|"light_level"|"temperature_enabled"|"temperature"} eventName The event name
-	 * @param {on} listener
-	 */
-	on(eventName, listener)
-	{super.on(eventName, listener)}
 
 	_addService(service)
 	{
@@ -47,5 +50,48 @@ export default class MotionSensor extends Accessory
 	isEnabled()
 	{return (this._motion.isEnabled())}
 
-	/** @todo Add service method */
+	/**
+	 * Enable or not the motion sensor
+	 *
+	 * @param {boolean} enabled - true if enabled, otherwise false
+	 * @returns {MotionSensor|Promise} - Return this object if prepareUpdate() was called, otherwise returns Promise
+	 */
+	setEnabled(enabled)
+	{return (this._motion.setEnabled(enabled, this))}
+
+	getBatteryState()
+	{return (this._power.getBatteryState())}
+
+	getBatteryLevel()
+	{return (this._power.getBatteryLevel())}
+
+	getLightLevel()
+	{return (this._lightLevel.getLevel())}
+
+	isLightLevelEnabled()
+	{return (this._lightLevel.isEnabled())}
+
+	/**
+	 * Enable or not the light level sensor
+	 *
+	 * @param {boolean} enabled - true if enabled, otherwise false
+	 * @returns {MotionSensor|Promise} - Return this object if prepareUpdate() was called, otherwise returns Promise
+	 */
+	setLightLevelEnabled(enabled)
+	{return (this._lightLevel.setEnabled(enabled, this))}
+
+	getTemperature()
+	{return (this._temperature.getTemperature())}
+
+	isTemperatureEnabled()
+	{return (this._temperature.isEnabled())}
+
+	/**
+	 * Enable or not the temperature sensor
+	 *
+	 * @param {boolean} enabled - true if enabled, otherwise false
+	 * @returns {MotionSensor|Promise} - Return this object if prepareUpdate() was called, otherwise returns Promise
+	 */
+	setTemperatureEnabled(enabled)
+	{return (this._temperature.setEnabled(enabled, this))}
 }

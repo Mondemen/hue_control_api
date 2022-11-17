@@ -1,3 +1,4 @@
+import { checkParam } from "../../utils/index.js";
 import Service from "./Service.js";
 
 export default class TemperatureService extends Service
@@ -18,6 +19,24 @@ export default class TemperatureService extends Service
 
 	isEnabled()
 	{return (this._data.enabled)}
+
+	/**
+	 * Enable or not the temperature sensor
+	 *
+	 * @param {boolean} enabled - true if enabled, otherwise false
+	 * @returns {TemperatureService|Promise} - Return this object if prepareUpdate() was called, otherwise returns Promise
+	 */
+	setEnabled(enabled, sender = this)
+	{
+		checkParam(this, "setEnabled", "enable", enabled, "boolean");
+		this._update.enabled = enabled;
+		if (sender._prepareUpdate)
+		{
+			sender._updatedService[this.getID()] = this;
+			return (sender);
+		}
+		return (this.update());
+	}
 
 	getTemperature()
 	{return (this._data.temperature)}
