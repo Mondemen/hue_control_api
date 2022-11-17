@@ -1,5 +1,5 @@
 package-lock.json
 node_modules
-test.js
-.watchmanconfig
 dist
+internal_tests
+.watchmanconfig
