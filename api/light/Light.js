@@ -26,7 +26,7 @@ export default class Light extends Device
 	 */
 	_connectivity;
 	/**
-	 * @type {Object.<string,Zone>}
+	 * @type {Object<string,Zone>}
 	 * @private
 	 */
 	_zone = {};
@@ -135,7 +135,7 @@ export default class Light extends Device
 	 *
 	 * @returns {Light.Status[keyof typeof Light.Status]} The status
 	 */
-	getStatus()
+	getConnectivityStatus()
 	{return (this._connectivity.getStatus())}
 
 	/**
