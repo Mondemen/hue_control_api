@@ -16,6 +16,9 @@ export default class WhiteAmbianceBulb extends WhiteBulb
 	getColorTemperature()
 	{return (this._light.getColorTemperature())}
 
+	getColorTemperatureMirek()
+	{return (this._light.getColorTemperatureMirek())}
+
 	setColorTemperature(value)
 	{return (this._light.setColorTemperature(value, this))}
 }

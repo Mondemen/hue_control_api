@@ -8,6 +8,7 @@ import Powerup from "../../lib/Powerup.js";
 
 /**
  * @typedef {import("../../lib/Color.js").ColorValue} ColorValue
+ * @typedef {import("../../lib/Color.js").XYValue} XYValue
  * @typedef {import("../../lib/LightData.js").Effect} Effect
  */
 
@@ -197,6 +198,14 @@ export default class LightService extends Service
 	{return (new Mired(this._update.color_temperature?.mirek ?? this._data.colorTemperature ?? this.getColor()))}
 
 	/**
+	 * Gets the color temperature of light in mirek format
+	 *
+	 * @returns {number} Returns the color
+	 */
+	getColorTemperatureMirek()
+	{return (this._update.color_temperature?.mirek ?? this._data.colorTemperature)}
+
+	/**
 	 * Sets the color temperature of light
 	 *
 	 * @param {Mired|Color|ColorValue|number} mired The color temperature
@@ -225,12 +234,20 @@ export default class LightService extends Service
 	 */
 	getColor()
 	{
-		let color = this._update.color?.xy ?? this._data.color
+		let color = this.getColorXY();
 
 		if (!color?.x && !color?.y)
 			return (new Color("#ffe07e", this._data.colorGamut));
 		return (new Color(color, this._data.colorGamut));
 	}
+
+	/**
+	 * Gets the color of light in XY format
+	 *
+	 * @returns {XYValue} Returns the color
+	 */
+	getColorXY()
+	{return (this._update.color?.xy ?? this._data.color)}
 
 	/**
 	 * Sets the color of light
