@@ -73,10 +73,10 @@ export default class Scene extends Resource
 		let light;
 
 		super._setData(data);
-		if (this._data.name != data?.metadata?.name)
+		if (data?.metadata?.name != undefined && this._data.name != data?.metadata?.name)
 			this.emit("name", this._data.name = data?.metadata?.name);
 		this._data.image = data?.metadata?.image?.rid ?? this._data.image;
-		if (this._data.auto_dynamic != data?.auto_dynamic)
+		if (data?.auto_dynamic != undefined && this._data.auto_dynamic != data?.auto_dynamic)
 			this.emit("auto_dynamic", this._data.auto_dynamic = data.auto_dynamic);
 		data?.actions?.forEach(action =>
 		{
@@ -179,11 +179,15 @@ export default class Scene extends Resource
 	 */
 	setImage(image)
 	{
-		checkParam(this, "setImage", "image", image, Scene.Image, "Scene.Image");
+		checkParam(this, "setImage", "image", image, "string");
+		if (!/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(image))
+			throw {code: ErrorCodes.badUUID, message: "Image ID does not match with accepted pattern (uuid v4)"};
 		if (this.isExists())
 			throw {code: ErrorCodes.alreadyExists, message: "Image can be define only during the creation of the scene"};
 		this._create.metadata ??= {};
-		this._create.metadata.image = image;
+		this._create.metadata.image ??= {};
+		this._create.metadata.image.rid = image;
+		this._create.metadata.image.rtype = Resource.Type.PUBLIC_IMAGE;
 		return (this);
 	}
 
