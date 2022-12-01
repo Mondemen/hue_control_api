@@ -302,7 +302,7 @@ export default class LightService extends Service
 	/**
 	 * Gets the dynamic scene status
 	 *
-	 * @returns {LightService.DynamicStatus} The dynamic scene status
+	 * @returns {LightService.DynamicStatus[keyof typeof LightService.DynamicStatus]} The dynamic scene status
 	 */
 	getDynamicStatus()
 	{return (this._data.dynamicStatus)}

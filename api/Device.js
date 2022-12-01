@@ -25,16 +25,10 @@ export default class Device extends Resource
 	_setData(data)
 	{
 		super._setData(data);
-		if (this._data.name != data?.metadata?.name)
-		{
-			this._data.name = data?.metadata?.name;
-			this.emit("name", this._data.name);
-		}
-		if (this._data.archetype != data?.metadata?.archetype)
-		{
-			this._data.archetype = data?.metadata?.archetype;
-			this.emit("archetype", this._data.archetype);
-		}
+		if (data?.metadata?.name != undefined && this._data.name != data?.metadata?.name)
+			this.emit("name", this._data.name = data?.metadata?.name);
+		if (data?.metadata?.archetype != undefined && this._data.archetype != data?.metadata?.archetype)
+			this.emit("archetype", this._data.archetype = data?.metadata?.archetype);
 		data?.services?.forEach(service =>
 		{
 			if (!(service instanceof Resource))
@@ -67,7 +61,7 @@ export default class Device extends Resource
 
 	/**
 	 * Set room of this device
-	 * 
+	 *
 	 * @param {Room} room - The room
 	 * @private
 	 */
@@ -76,7 +70,7 @@ export default class Device extends Resource
 
 	/**
 	 * Remove room of this device
-	 * 
+	 *
 	 * @private
 	 */
 	_deleteRoom()
@@ -84,7 +78,7 @@ export default class Device extends Resource
 
 	/**
 	 * Gets the name
-	 * 
+	 *
 	 * @returns {string} The name
 	 */
 	getName()
@@ -92,7 +86,7 @@ export default class Device extends Resource
 
 	/**
 	 * Gets the arche type
-	 * 
+	 *
 	 * @returns {string} The arche type
 	 */
 	getArchetype()
@@ -100,7 +94,7 @@ export default class Device extends Resource
 
 	/**
 	 * Get room of this device
-	 * 
+	 *
 	 * @returns {Room}
 	 */
 	getRoom()
