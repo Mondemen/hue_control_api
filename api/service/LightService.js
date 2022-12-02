@@ -57,6 +57,8 @@ export default class LightService extends Service
 			this._data.mode = data.mode;
 			this.emit("mode", this.getMode());
 		}
+		if (data?.dynamics?.status != undefined && this._data.dynamicStatus != data?.dynamics?.status)
+			this.emit("dynamic_status", this._data.dynamicStatus = data.dynamics.status);
 		if (data?.on?.on != undefined && this._data.state != data?.on?.on)
 			this.emit("state", this._data.state = data.on.on);
 		if (data?.dimming?.min_dim_level != undefined && this._data.minBrightness != +data.dimming.min_dim_level.toFixed(2))
@@ -77,8 +79,6 @@ export default class LightService extends Service
 		}
 		if (data?.dynamics?.speed != undefined && this._data.dynamicSpeed != data?.dynamics?.speed)
 			this.emit("dynamic_speed", this._data.dynamicSpeed = data.dynamics.speed);
-		if (data?.dynamics?.status != undefined && this._data.dynamicStatus != data?.dynamics?.status)
-			this.emit("dynamic_status", this._data.dynamicStatus = data.dynamics.status);
 		effect = data?.effects?.status ?? data?.effects?.effect;
 		if (effect != undefined && this._data.effect != effect)
 			this.emit("effect", this._data.effect = effect);
@@ -274,23 +274,23 @@ export default class LightService extends Service
 	 * @returns {number} The speed of dynamic scene, between 0 and 100
 	 */
 	getDynamicSpeed()
-	{return ((this._update.dynamics?.speed ?? this._data.dynamicSpeed) * 100)}
+	{return (this._update.dynamics?.speed ?? this._data.dynamicSpeed)}
 
 	/**
 	 * Sets the dynamic scene speed
 	 *
-	 * @param {number} speed The speed value between 0 and 100
+	 * @param {number} speed The speed value between 0 and 1
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
 	 */
 	setDynamicSpeed(speed, sender = this)
 	{
 		checkParam(this, "setDynamicSpeed", "speed", speed, "number");
-		if (speed < 0 || speed > 100)
-			console.warn(`${sender.constructor.name}.setDynamicSpeed(): Speed '${speed}' is out of range (0 <= value <= 100), sets to ${Math.min(Math.max(value, 0), 100)}`);
-		speed = Math.min(Math.max(speed, 0), 100);
+		if (speed < 0 || speed > 1)
+			console.warn(`${sender.constructor.name}.setDynamicSpeed(): Speed '${speed}' is out of range (0 <= value <= 1), sets to ${Math.min(Math.max(value, 0), 1)}`);
+		speed = Math.min(Math.max(speed, 0), 1);
 		this._update.dynamics ??= {};
-		this._update.dynamics.speed = speed / 100;
+		this._update.dynamics.speed = speed;
 		if (sender._prepareUpdate)
 		{
 			sender._updatedService[this.getID()] = this;
@@ -376,6 +376,30 @@ export default class LightService extends Service
 		return (LightService.Mode.STREAMING);
 		// return (this._data.mode);
 	}
+
+	/**
+	 * Check if effect is enabled
+	 *
+	 * @returns {boolean}
+	 */
+	isEffectEnabled()
+	{return (this._data.effect && this._data.effect != LightService.Effect.NONE)}
+
+	/**
+	 * Check if dynamic is enabled
+	 *
+	 * @returns {boolean}
+	 */
+	isDynamicEnabled()
+	{return (this._data.dynamicStatus && this._data.dynamicStatus == LightService.DynamicStatus.DYNAMIC_PALETTE)}
+
+	/**
+	 * Check if streaming is enabled
+	 *
+	 * @returns {boolean}
+	 */
+	isStreamingEnabled()
+	{return (this._data.mode && this._data.mode == LightService.Mode.STREAMING)}
 
 	/**
 	 * Gets the list of supported effects of the light
