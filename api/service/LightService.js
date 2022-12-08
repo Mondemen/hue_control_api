@@ -36,6 +36,7 @@ export default class LightService extends Service
 	_setData(data)
 	{
 		let effect;
+		let modeUpdate = false;
 
 		super._setData(data);
 		if (data?.on)
@@ -52,13 +53,20 @@ export default class LightService extends Service
 			this._capabilities.add(LightService.Capabilities.EFFECT);
 		if (data?.timed_effects)
 			this._capabilities.add(LightService.Capabilities.TIMED_EFFECT);
-		if (data?.mode)
+		if (data?.mode != undefined && this._data.mode != data.mode)
 		{
-			this._data.mode = data.mode;
-			this.emit("mode", this.getMode());
+			this.emit("raw_mode", this._data.mode = data.mode);
+			modeUpdate = true;
 		}
+		if (data?.dynamics?.speed != undefined && this._data.dynamicSpeed != data?.dynamics?.speed)
+			this.emit("dynamic_speed", this._data.dynamicSpeed = data.dynamics.speed);
 		if (data?.dynamics?.status != undefined && this._data.dynamicStatus != data?.dynamics?.status)
+		{
 			this.emit("dynamic_status", this._data.dynamicStatus = data.dynamics.status);
+			modeUpdate = true;
+		}
+		if (modeUpdate)
+			this.emit("mode", this.getMode());
 		if (data?.on?.on != undefined && this._data.state != data?.on?.on)
 			this.emit("state", this._data.state = data.on.on);
 		if (data?.dimming?.min_dim_level != undefined && this._data.minBrightness != +data.dimming.min_dim_level.toFixed(2))
@@ -77,8 +85,6 @@ export default class LightService extends Service
 			this._data.color = data.color.xy;
 			this.emit("color", this.getColor());
 		}
-		if (data?.dynamics?.speed != undefined && this._data.dynamicSpeed != data?.dynamics?.speed)
-			this.emit("dynamic_speed", this._data.dynamicSpeed = data.dynamics.speed);
 		effect = data?.effects?.status ?? data?.effects?.effect;
 		if (effect != undefined && this._data.effect != effect)
 			this.emit("effect", this._data.effect = effect);
@@ -363,7 +369,9 @@ export default class LightService extends Service
 	 */
 	getMode()
 	{
-		if (this._data.mode == "normal")
+		if (this._data.dynamicStatus == LightService.DynamicStatus.DYNAMIC_PALETTE)
+			return (LightService.Mode.DYNAMIC);
+		else if (this._data.mode == "normal")
 		{
 			if (this._data.effect && this._data.effect != LightService.Effect.NONE)
 				return (LightService.Mode.EFFECT);
@@ -373,9 +381,18 @@ export default class LightService extends Service
 				return (LightService.Mode.COLOR);
 			return;
 		}
-		return (LightService.Mode.STREAMING);
-		// return (this._data.mode);
+		else if (this._data.mode == "streaming")
+			return (LightService.Mode.STREAMING);
+		return (LightService.Mode.NONE);
 	}
+
+	/**
+	 * Gets the current raw mode of the light (normal or streaming)
+	 *
+	 * @returns {string} The raw mode
+	 */
+	getRawMode()
+	{return (this._data.mode)}
 
 	/**
 	 * Check if effect is enabled
