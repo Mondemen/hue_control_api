@@ -270,7 +270,7 @@ export default class Scene extends Resource
 		await super.update();
 	}
 
-	async startDynamicPalette(brightness, transitionTime)
+	async applyDynamic(brightness, transitionTime)
 	{
 		let isExists = this.isExists();
 		let error;
@@ -278,6 +278,30 @@ export default class Scene extends Resource
 		if (!isExists)
 			await this.create();
 		this._update.recall = {action: "dynamic_palette"};
+		if (brightness != undefined)
+			this._update.recall.dimming = {brightness};
+		if (transitionTime != undefined)
+			this._update.recall.duration = transitionTime;
+		try
+		{await this.update()}
+		catch (err)
+		{error = err}
+		finally
+		{this._update = {}}
+		if (!isExists)
+			await this.delete();
+		if (error)
+			throw error;
+	}
+
+	async applyStatic(brightness, transitionTime)
+	{
+		let isExists = this.isExists();
+		let error;
+
+		if (!isExists)
+			await this.create();
+		this._update.recall = {action: "static"};
 		if (brightness != undefined)
 			this._update.recall.dimming = {brightness};
 		if (transitionTime != undefined)
