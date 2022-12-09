@@ -6,6 +6,24 @@ import LightService from "../service/LightService.js";
  * @typedef {import('../service/Service.js').default} Service
  * @typedef {import('../group/Room.js').default} Room
  * @typedef {import('../group/Zone.js').default} Zone
+ * @typedef {import('../Resource.js').EventCallback} EventCallbackInherit
+ */
+/**
+ * @typedef EventCallbackTypes
+ * @type {Object}
+ * @property {import("../service/LightService.js").StateEvent} state
+ * @property {import("../service/LightService.js").ModeEvent} mode
+ * @property {import("../service/LightService.js").RawModeEvent} raw_mode
+ * @property {import("../../lib/Powerup.js").PowerupPresetEvent} powerup_preset
+ * @property {import("../../lib/Powerup.js").PowerupConfiguredEvent} powerup_configured
+ * @property {import("../../lib/Powerup.js").PowerupStateModeEvent} powerup_state_mode
+ * @property {import("../../lib/Powerup.js").PowerupStateEvent} powerup_state
+ * @property {import("../../lib/Powerup.js").PowerupDimmingModeEvent} powerup_dimming_mode
+ * @property {import("../../lib/Powerup.js").PowerupBrightnessEvent} powerup_brightness
+ * @property {import("../../lib/Powerup.js").PowerupColorModeEvent} powerup_color_mode
+ * @property {import("../../lib/Powerup.js").PowerupColorEvent} powerup_color
+ * @property {import("../../lib/Powerup.js").PowerupColorTemperatureEvent} powerup_color_temperature
+ * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
 export default class Light extends Device
@@ -101,12 +119,20 @@ export default class Light extends Device
 	}
 
 	/**
-	 * Gets the name
-	 *
-	 * @returns {string} The name
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
 	 */
-	getName()
-	{return (this._data.name)}
+	on(eventName, listener)
+	{return (super.on(eventName, listener))}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	once(eventName, listener)
+	{return (super.once(eventName, listener))}
 
 	/**
 	 * Gets the list of capabilities
@@ -123,6 +149,14 @@ export default class Light extends Device
 	 */
 	getMode()
 	{return (this._light.getMode())}
+
+	/**
+	 * Gets the current raw mode of light (normal or streaming)
+	 *
+	 * @returns {string} The raw mode
+	 */
+	getRawMode()
+	{return (this._light.getRawMode())}
 
 	getZones()
 	{return (this._zone)}
