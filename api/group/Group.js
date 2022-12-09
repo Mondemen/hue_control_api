@@ -9,6 +9,10 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
 /**
  * @typedef {import('../Device.js').default} Device
  * @typedef {import('../light/Light.js').default} Light
+ * @typedef {import('../light/Bulb.js').default} Bulb
+ * @typedef {import('../light/ColorBulb.js').default} ColorBulb
+ * @typedef {import('../light/WhiteAmbianceBulb.js').default} WhiteAmbianceBulb
+ * @typedef {import('../light/WhiteAndColorBulb.js').default} WhiteAndColorBulb
  * @typedef {import('../service/Service.js').default} Service
  * @typedef {import('../Resource.js').EventCallback} EventCallbackInherit
  */
