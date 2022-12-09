@@ -4,6 +4,15 @@ import WhiteBulb from "./WhiteBulb.js";
 /**
  * @typedef {import("../../lib/Color.js").ColorValue} ColorValue
  * @typedef {import("../../lib/Color.js").XYValue} XYValue
+ * @typedef {import('./Bulb.js').EventCallback} EventCallbackInherit
+ *
+ * @typedef EventCallbackTypes
+ * @type {Object}
+ * @property {import("../service/LightService.js").ColorEvent} color
+ * @property {import("../service/LightService.js").ColorXYEvent} color_xy
+ * @property {import("../../lib/Gradient.js").GradientColorEvent} gradient_color
+ * @property {import("../../lib/Gradient.js").GradientColorXYEvent} gradient_color_xy
+ * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
 export default class ColorBulb extends WhiteBulb
@@ -12,6 +21,22 @@ export default class ColorBulb extends WhiteBulb
 	{
 		super(bridge, data);
 	}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	on(eventName, listener)
+	{return (super.on(eventName, listener))}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	once(eventName, listener)
+	{return (super.once(eventName, listener))}
 
 	/**
 	 * Gets the color of light

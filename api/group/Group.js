@@ -10,6 +10,159 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  * @typedef {import('../Device.js').default} Device
  * @typedef {import('../light/Light.js').default} Light
  * @typedef {import('../service/Service.js').default} Service
+ * @typedef {import('../Resource.js').EventCallback} EventCallbackInherit
+ */
+
+/**
+ * @callback NameEvent
+ * @param {string} name - Name of device
+ *
+ * @callback ArchetypeEvent
+ * @param {string} archetype - Archetype of device
+ *
+ * @callback AddDeviceEvent
+ * @param {Device} device - Added device
+ *
+ * @callback DeleteDeviceEvent
+ * @param {Device} device - Deleted device
+ *
+ * @callback LightNameEvent
+ * @param {Light} light - Updated light
+ * @param {string} name - Name of device
+ *
+ * @callback LightArchetypeEvent
+ * @param {Light} light - Updated light
+ * @param {string} archetype - Archetype of device
+ *
+ * @callback LightEventStart
+ * @param {Light} light - Updated light
+ *
+ * @callback LightEventEnd
+ * @param {Light} light - Updated light
+ *
+ * @callback LightStateEvent
+ * @param {Light} light - Updated light
+ * @param {LightService.State[keyof typeof LightService.State]} state - The state of light
+ *
+ * @callback LightBrightnessEvent
+ * @param {Bulb} light - Updated light
+ * @param {number} brighness - The brightness of light
+ *
+ * @callback LightColorTemperatureEvent
+ * @param {WhiteAmbianceBulb} light - Updated light
+ * @param {Mired} mirek - The color temperature of light
+ *
+ * @callback LightColorTemperatureMiredEvent
+ * @param {WhiteAmbianceBulb} light - Updated light
+ * @param {number} mirek - The color temperature of light in mired format
+ *
+ * @callback LightColorEvent
+ * @param {ColorBulb|WhiteAndColorBulb} light - Updated light
+ * @param {Color} color - The color of light
+ *
+ * @callback LightColorXYEvent
+ * @param {ColorBulb|WhiteAndColorBulb} light - Updated light
+ * @param {XYValue} color - The color of light in XY format
+ *
+ * @callback LightEffectEvent
+ * @param {Bulb} light - Updated light
+ * @param {LightService.Effect[keyof typeof LightService.Effect]} effect - The effect of light
+ *
+ * @callback LightDynamicSpeedEvent
+ * @param {Bulb} light - Updated light
+ * @param {number} speed - The speed of dynamic scene, between 0 and 100
+ *
+ * @callback LightDynamicStatusEvent
+ * @param {Bulb} light - Updated light
+ * @param {LightService.DynamicStatus[keyof typeof LightService.DynamicStatus]} status - The dynamic scene status
+ *
+ * @callback LightModeEvent
+ * @param {Light} light - Updated light
+ * @param {LightService.Mode[keyof typeof LightService.Mode]} mode - The mode of light
+ *
+ * @callback LightRawModeEvent
+ * @param {Light} light - Updated light
+ * @param {string} mode - The raw mode of light
+ *
+ * @callback LightGradientColorEvent
+ * @param {ColorBulb|WhiteAndColorBulb} light - Updated light
+ * @param {number} i - Index position of color in array
+ * @param {Color} color - The color
+ *
+ * @callback LightGradientColorXYEvent
+ * @param {ColorBulb|WhiteAndColorBulb} light - Updated light
+ * @param {number} i - Index position of color in array
+ * @param {XYValue} color - The color in XY format
+ *
+ * @callback LightPowerupPresetEvent
+ * @param {Light} light - Updated light
+ * @param {Powerup.Preset[keyof typeof Powerup.Preset]} preset - The preset
+ *
+ * @callback LightPowerupConfiguredEvent
+ * @param {Light} light - Updated light
+ * @param {boolean} configured - Is powerup is configured
+ *
+ * @callback LightPowerupStateModeEvent
+ * @param {Light} light - Updated light
+ * @param {Powerup.StateMode[keyof typeof Powerup.StateMode]} mode - The state mode
+ *
+ * @callback LightPowerupStateEvent
+ * @param {Light} light - Updated light
+ * @param {Powerup.State[keyof typeof Powerup.State]} state - The state
+ *
+ * @callback LightPowerupDimmingModeEvent
+ * @param {Light} light - Updated light
+ * @param {Powerup.DimmingMode[keyof typeof Powerup.DimmingMode]} mode - The dimming mode
+ *
+ * @callback LightPowerupBrightnessEvent
+ * @param {Light} light - Updated light
+ * @param {number} brightness - The brightness
+ *
+ * @callback LightPowerupColorModeEvent
+ * @param {Light} light - Updated light
+ * @param {Powerup.ColorMode[keyof typeof Powerup.ColorMode]} mode - The color mode
+ *
+ * @callback LightPowerupColorEvent
+ * @param {Light} light - Updated light
+ * @param {Color} color - The color
+ *
+ * @callback LightPowerupColorTemperatureEvent
+ * @param {Light} light - Updated light
+ * @param {Mired} mired - The color temperature
+ *
+ * @typedef EventCallbackTypes
+ * @type {Object}
+ * @property {NameEvent} name
+ * @property {ArchetypeEvent} archetype
+ * @property {AddDeviceEvent} add_device
+ * @property {DeleteDeviceEvent} delete_device
+ * @property {LightNameEvent} light_name
+ * @property {LightArchetypeEvent} light_archetype
+ * @property {LightEventStart} light_event_start
+ * @property {LightEventEnd} light_event_end
+ * @property {LightStateEvent} light_state
+ * @property {LightBrightnessEvent} light_brightness
+ * @property {LightColorTemperatureEvent} light_color_temperature
+ * @property {LightColorTemperatureMiredEvent} light_color_temperature_mired
+ * @property {LightColorEvent} light_color
+ * @property {LightColorXYEvent} light_color_xy
+ * @property {LightEffectEvent} light_effect
+ * @property {LightDynamicSpeedEvent} light_dynamic_speed
+ * @property {LightDynamicStatusEvent} light_dynamic_status
+ * @property {LightModeEvent} light_mode
+ * @property {LightRawModeEvent} light_raw_mode
+ * @property {LightGradientColorEvent} light_gradient_color
+ * @property {LightGradientColorXYEvent} light_gradient_color_xy
+ * @property {LightPowerupPresetEvent} light_powerup_preset
+ * @property {LightPowerupConfiguredEvent} light_powerup_configured
+ * @property {LightPowerupStateModeEvent} light_powerup_state_mode
+ * @property {LightPowerupStateEvent} light_powerup_state
+ * @property {LightPowerupDimmingModeEvent} light_powerup_dimming_mode
+ * @property {LightPowerupBrightnessEvent} light_powerup_drightness
+ * @property {LightPowerupColorModeEvent} light_powerup_color_mode
+ * @property {LightPowerupColorEvent} light_powerup_color
+ * @property {LightPowerupColorTemperatureEvent} light_powerup_color_temperature
+ * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
 export default class Group extends Resource
@@ -55,7 +208,7 @@ export default class Group extends Resource
 	}
 
 	/**
-	 * @param {*} data 
+	 * @param {*} data
 	 * @protected
 	 */
 	_setData(data)
@@ -81,6 +234,22 @@ export default class Group extends Resource
 	}
 
 	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	on(eventName, listener)
+	{return (super.on(eventName, listener))}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	once(eventName, listener)
+	{return (super.once(eventName, listener))}
+
+	/**
 	 * @returns {Object}
 	 * @protected
 	 */
@@ -98,7 +267,7 @@ export default class Group extends Resource
 
 	/**
 	 * Add GroupLightService
-	 * 
+	 *
 	 * @param {GroupLightService} service The service
 	 * @protected
 	 */
@@ -114,7 +283,7 @@ export default class Group extends Resource
 
 	/**
 	 * Add Scene
-	 * 
+	 *
 	 * @param {Scene} scene The scene
 	 * @protected
 	 */
@@ -126,7 +295,7 @@ export default class Group extends Resource
 
 	/**
 	 * Delete Scene
-	 * 
+	 *
 	 * @param {Scene|string} scene The scene
 	 * @protected
 	 */
@@ -135,7 +304,7 @@ export default class Group extends Resource
 
 	/**
 	 * Add Device
-	 * 
+	 *
 	 * @param {Device} device The device
 	 * @protected
 	 */
@@ -147,7 +316,7 @@ export default class Group extends Resource
 
 	/**
 	 * Delete Device
-	 * 
+	 *
 	 * @param {Device|string} device The device
 	 * @protected
 	 */
@@ -171,7 +340,7 @@ export default class Group extends Resource
 
 	/**
 	 * Gets the name
-	 * 
+	 *
 	 * @returns {string} The name
 	 */
 	getName()
@@ -179,7 +348,7 @@ export default class Group extends Resource
 
 	/**
 	 * Gets the arche type
-	 * 
+	 *
 	 * @returns {string} The arche type
 	 */
 	getArchetype()
@@ -187,7 +356,7 @@ export default class Group extends Resource
 
 	/**
 	 * Add device to group
-	 * 
+	 *
 	 * @param {Device} device The device to adds to the group
 	 * @returns {Group|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
@@ -203,7 +372,7 @@ export default class Group extends Resource
 
 	/**
 	 * Remove device to group
-	 * 
+	 *
 	 * @param {Device} device The device to remove from the group
 	 * @returns {Group|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
@@ -224,7 +393,7 @@ export default class Group extends Resource
 
 	/**
 	 * Gets device from this group
-	 * 
+	 *
 	 * @param {string} id The device ID
 	 * @returns {Device} The device
 	 */
@@ -233,7 +402,7 @@ export default class Group extends Resource
 
 	/**
 	 * Gets the list of device in this group
-	 * 
+	 *
 	 * @returns {Device[]} The list of device
 	 */
 	getDevices()

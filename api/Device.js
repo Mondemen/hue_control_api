@@ -2,6 +2,20 @@ import Resource from "./Resource.js";
 
 /**
  * @typedef {import('./group/Room.js').default} Room
+ * @typedef {import('./Resource.js').EventCallback} EventCallbackInherit
+ */
+
+/**
+ * @callback NameEvent
+ * @param {string} name - Name of device
+ * @callback ArchetypeEvent
+ * @param {string} archetype - Archetype of device
+ *
+ * @typedef EventCallbackTypes
+ * @type {Object}
+ * @property {NameEvent} name
+ * @property {ArchetypeEvent} archetype
+ * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
 export default class Device extends Resource
@@ -75,6 +89,22 @@ export default class Device extends Resource
 	 */
 	_deleteRoom()
 	{this._room = undefined}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	on(eventName, listener)
+	{return (super.on(eventName, listener))}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	once(eventName, listener)
+	{return (super.once(eventName, listener))}
 
 	/**
 	 * Gets the name

@@ -32,6 +32,24 @@ import Scene from "./Scene.js";
 /**
  * @typedef {import('../lib/Request.js').default} Request
  * @typedef {import('../lib/Connector.js').default} Connector
+ * @typedef {import('./Resource.js').EventCallback} EventCallbackInherit
+ */
+
+/**
+ * @callback ConnectedEvent
+ * @callback DisconnectedEvent
+ * @callback ConnectionErrorEvent
+ * @param {Error} error - Connection error
+ * @callback RefreshTokenEvent
+ * @param {string} refresh_token - Refresh token for remote access
+ *
+ * @typedef EventCallbackTypes
+ * @type {Object}
+ * @property {ConnectedEvent} connected
+ * @property {DisconnectedEvent} disconnected
+ * @property {ConnectionErrorEvent} connection_error
+ * @property {RefreshTokenEvent} refresh_token
+ * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
 export default class Bridge extends Device
@@ -248,6 +266,22 @@ export default class Bridge extends Device
 			this._streamEvent();
 		});
 	}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	on(eventName, listener)
+	{return (super.on(eventName, listener))}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	once(eventName, listener)
+	{return (super.once(eventName, listener))}
 
 	// async _streamEventV1(once = true)
 	// {

@@ -6,6 +6,28 @@ import EventEmitter from "../lib/EventEmitter.js";
  * @typedef {import('./Bridge.js').default} Bridge
  */
 
+/**
+ * @callback EventStart
+ * @callback EventEnd
+ *
+ * @callback AddResourceEvent
+ * @param {Resource} resource - Resource added
+ *
+ * @callback DeleteResourceEvent
+ * @param {Resource} resource - Resource deleted
+ *
+ * @callback UpdateEvent
+ * @param {Object} data - Update event in JSON format
+ *
+ *
+ * @typedef {Object} EventCallback
+ * @property {EventStart} event_start
+ * @property {EventEnd} event_end
+ * @property {AddResourceEvent} add_resource
+ * @property {DeleteResourceEvent} delete_resource
+ * @property {UpdateEvent} update
+ */
+
 export default class Resource extends EventEmitter
 {
 	/**
@@ -229,6 +251,22 @@ export default class Resource extends EventEmitter
 			this._bridge?._eventStart();
 		super.emit(eventName, ...args);
 	}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	on(eventName, listener)
+	{return (super.on(eventName, listener))}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	once(eventName, listener)
+	{return (super.once(eventName, listener))}
 
 	/**
 	 * @private

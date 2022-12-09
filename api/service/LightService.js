@@ -12,6 +12,41 @@ import Powerup from "../../lib/Powerup.js";
  * @typedef {import("../../lib/LightData.js").Effect} Effect
  */
 
+/**
+ * @callback StateEvent
+ * @param {LightService.State[keyof typeof LightService.State]} state - The state of light
+ *
+ * @callback BrightnessEvent
+ * @param {number} brighness - The brightness of light
+ *
+ * @callback ColorTemperatureEvent
+ * @param {Mired} mirek - The color temperature of light
+ *
+ * @callback ColorTemperatureMiredEvent
+ * @param {number} mirek - The color temperature of light in mired format
+ *
+ * @callback ColorEvent
+ * @param {Color} color - The color of light
+ *
+ * @callback ColorXYEvent
+ * @param {XYValue} color - The color of light in XY format
+ *
+ * @callback EffectEvent
+ * @param {LightService.Effect[keyof typeof LightService.Effect]} effect - The effect of light
+ *
+ * @callback DynamicSpeedEvent
+ * @param {number} speed - The speed of dynamic scene, between 0 and 100
+ *
+ * @callback DynamicStatusEvent
+ * @param {LightService.DynamicStatus[keyof typeof LightService.DynamicStatus]} status - The dynamic scene status
+ *
+ * @callback ModeEvent
+ * @param {LightService.Mode[keyof typeof LightService.Mode]} mode - The mode of light
+ *
+ * @callback RawModeEvent
+ * @param {string} mode - The raw mode of light
+ */
+
 export default class LightService extends Service
 {
 	static Capabilities = LightData.Capabilities;
@@ -76,7 +111,10 @@ export default class LightService extends Service
 		if (data?.color_temperature?.mirek == null)
 			this._data.colorTemperature = null;
 		else if (data?.color_temperature?.mirek != undefined && this._data.colorTemperature != data?.color_temperature?.mirek)
+		{
 			this.emit("color_temperature", new Mired(this._data.colorTemperature = data.color_temperature.mirek));
+			this.emit("color_temperature_mired", data.color_temperature.mirek);
+		}
 		this._data.minColorTemperature = data?.color_temperature?.mirek_schema?.mirek_minimum ?? this._data.minColorTemperature;
 		this._data.maxColorTemperature = data?.color_temperature?.mirek_schema?.mirek_maximum ?? this._data.maxColorTemperature;
 		this._data.colorGamut = data?.color?.gamut ?? this._data.colorGamut;
@@ -84,12 +122,13 @@ export default class LightService extends Service
 		{
 			this._data.color = data.color.xy;
 			this.emit("color", this.getColor());
+			this.emit("color_xy", data.color.xy);
 		}
 		effect = data?.effects?.status ?? data?.effects?.effect;
 		if (effect != undefined && this._data.effect != effect)
 			this.emit("effect", this._data.effect = effect);
 		if (Array.isArray(data?.effects?.status_values) && this._data.effectList != data?.effects?.status_values)
-			this.emit("effect_list", this._data.effectList = [...data?.effects?.status_values]);
+			this._data.effectList = [...data?.effects?.status_values];
 		if (data?.gradient)
 		{
 			this._gradient ??= new Gradient(this);
@@ -108,7 +147,7 @@ export default class LightService extends Service
 	/**
 	 * Gets the list of capabilities
 	 *
-	 * @returns {Set<LightService.Capabilities>} The list of capabilities
+	 * @returns {Set<LightService.Capabilities[keyof typeof LightService.Capabilities]>} - The list of capabilities
 	 */
 	getCapabilities()
 	{return (this._capabilities)}
@@ -116,7 +155,7 @@ export default class LightService extends Service
 	/**
 	 * Gets the state of light
 	 *
-	 * @returns {LightService.State} The state of light
+	 * @returns {LightService.State[keyof typeof LightService.State]} - The state of light
 	 */
 	getState()
 	{return (this._update.on?.on ?? this._data.state)}
@@ -129,6 +168,7 @@ export default class LightService extends Service
 	 */
 	setState(state, sender = this)
 	{
+		this.getState()
 		checkParam(this, "setState", "state", state, "boolean");
 		LightData.setState(this._update, state);
 		if (sender._prepareUpdate)
@@ -150,7 +190,7 @@ export default class LightService extends Service
 	/**
 	 * Gets the brightness of light
 	 *
-	 * @returns {number} The brightness of light
+	 * @returns {number} - The brightness of light
 	 */
 	getBrightness()
 	{return (Math.max(this._update.dimming?.brightness ?? this._data.brightness ?? 100, this.getMinBrightness()))}
@@ -158,7 +198,7 @@ export default class LightService extends Service
 	/**
 	 * Set brightness of light
 	 *
-	 * @param {number} brightness The brightness
+	 * @param {number} brightness - The brightness of light
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
 	setBrightness(brightness, sender = this)
@@ -214,7 +254,7 @@ export default class LightService extends Service
 	/**
 	 * Sets the color temperature of light
 	 *
-	 * @param {Mired|Color|ColorValue|number} mired The color temperature
+	 * @param {Mired|Color|ColorValue|number} mired - The color temperature of light
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 * @throws {ArgumentError}
 	 */
@@ -363,9 +403,9 @@ export default class LightService extends Service
 	}
 
 	/**
-	 * Gets the current mode of the light
+	 * Gets the current mode of light
 	 *
-	 * @returns {LightService.Mode[keyof typeof LightService.Mode]} The mode
+	 * @returns {LightService.Mode[keyof typeof LightService.Mode]} The mode of light
 	 */
 	getMode()
 	{
@@ -387,7 +427,7 @@ export default class LightService extends Service
 	}
 
 	/**
-	 * Gets the current raw mode of the light (normal or streaming)
+	 * Gets the current raw mode of light (normal or streaming)
 	 *
 	 * @returns {string} The raw mode
 	 */
@@ -419,7 +459,7 @@ export default class LightService extends Service
 	{return (this._data.mode && this._data.mode == LightService.Mode.STREAMING)}
 
 	/**
-	 * Gets the list of supported effects of the light
+	 * Gets the list of supported effects of light
 	 *
 	 * @returns {LightService.Effect[keyof typeof LightService.Effect][]} The effect list
 	 */
@@ -429,7 +469,7 @@ export default class LightService extends Service
 	/**
 	 * Check if the effect is supported by the light
 	 *
-	 * @param {LightService.Effect[keyof typeof LightService.Effect]} effect The effect to check
+	 * @param {LightService.Effect[keyof typeof LightService.Effect]} effect - The effect to check
 	 * @returns {boolean} True if the effect is suported otherwise false
 	 */
 	isSupportEffect(effect)
@@ -440,15 +480,15 @@ export default class LightService extends Service
 	}
 
 	/**
-	 * Gets the current effect of the light
+	 * Gets the current effect of light
 	 *
-	 * @returns {LightService.Effect[keyof typeof LightService.Effect]} The effect
+	 * @returns {LightService.Effect[keyof typeof LightService.Effect]} The effect of light
 	 */
 	getEffect()
 	{return (this._update.effects?.effect ?? this._data.effect)}
 
 	/**
-	 * Sets the effect of the light
+	 * Sets the effect of light
 	 *
 	 * @param {LightService.Effect[keyof typeof LightService.Effect]} effect The effect
 	 * @returns {LightService|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise

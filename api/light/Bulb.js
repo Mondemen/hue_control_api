@@ -1,6 +1,17 @@
 import LightService from "../service/LightService.js";
 import Plug from "./Plug.js";
 
+/**
+ * @typedef {import('./Light.js').EventCallback} EventCallbackInherit
+ *
+ * @typedef EventCallbackTypes
+ * @type {Object}
+ * @property {import("../service/LightService.js").BrightnessEvent} brightness
+ * @property {import("../service/LightService.js").EffectEvent} effect
+ * @property {import("../service/LightService.js").DynamicStatusEvent} dynamic_status
+ * @property {import("../service/LightService.js").DynamicSpeedEvent} dynamic_speed
+ * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
+ */
 export default class Bulb extends Plug
 {
 	static Effect = LightService.Effect;
@@ -10,6 +21,22 @@ export default class Bulb extends Plug
 	{
 		super(bridge, data);
 	}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	on(eventName, listener)
+	{return (super.on(eventName, listener))}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	once(eventName, listener)
+	{return (super.once(eventName, listener))}
 
 	/**
 	 * Gets the minimum brightness accepted by the light
