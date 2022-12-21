@@ -6,4 +6,10 @@ export default class WhiteBulb extends Bulb
 	{
 		super(bridge, data);
 	}
+
+	getColorTemperature()
+	{return (this._light.getColorTemperature())}
+
+	getColorTemperatureMirek()
+	{return (this._light.getColorTemperatureMirek())}
 }

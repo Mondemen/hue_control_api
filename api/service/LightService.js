@@ -108,6 +108,8 @@ export default class LightService extends Service
 			this._data.minBrightness = +data.dimming.min_dim_level.toFixed(2);
 		if (data?.dimming?.brightness != undefined && this._data.brightness != +Math.max(data.dimming.brightness, this.getMinBrightness()).toFixed(2))
 			this.emit("brightness", this._data.brightness = +Math.max(data.dimming.brightness, this.getMinBrightness()).toFixed(2));
+		if (data?.metadata?.fixed_mired != undefined && this._data.colorTemperature != data?.metadata?.fixed_mired)
+			this._data.fixed_mired = data.metadata.fixed_mired;
 		if (data?.color_temperature?.mirek == null)
 			this._data.colorTemperature = null;
 		else if (data?.color_temperature?.mirek != undefined && this._data.colorTemperature != data?.color_temperature?.mirek)
@@ -241,7 +243,7 @@ export default class LightService extends Service
 	 * @throws {ArgumentError}
 	 */
 	getColorTemperature()
-	{return (new Mired(this._update.color_temperature?.mirek ?? this._data.colorTemperature ?? this.getColor()))}
+	{return (new Mired(this._update.color_temperature?.mirek ?? this._data.colorTemperature ?? this._data.fixed_mired ?? this.getColor()))}
 
 	/**
 	 * Gets the color temperature of light in mirek format
@@ -249,7 +251,7 @@ export default class LightService extends Service
 	 * @returns {number} Returns the color
 	 */
 	getColorTemperatureMirek()
-	{return (this._update.color_temperature?.mirek ?? this._data.colorTemperature)}
+	{return (this._update.color_temperature?.mirek ?? this._data.colorTemperature ?? this._data.fixed_mired)}
 
 	/**
 	 * Sets the color temperature of light
