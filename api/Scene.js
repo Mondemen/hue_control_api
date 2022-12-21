@@ -7,6 +7,32 @@ import ErrorCodes from "../lib/error/ErrorCodes.js";
 
 /**
  * @typedef {import('./group/Group.js').default} Group
+ * @typedef {import('./Resource.js').EventCallback} EventCallbackInherit
+ */
+
+/**
+ * @callback NameEvent
+ * @param {string} name - Name of device
+ *
+ * @callback AutoDynamicEvent
+ * @param {boolean} autoDynamic - Archetype of device
+ *
+ * @typedef EventCallbackTypes
+ * @type {Object}
+ * @property {NameEvent} name
+ * @property {import("../lib/SceneAction.js").ActionStateEvent} action_state
+ * @property {import("../lib/SceneAction.js").ActionBrightnessEvent} action_brightness
+ * @property {import("../lib/SceneAction.js").ActionColorTemperatureEvent} action_color_temperature
+ * @property {import("../lib/SceneAction.js").ActionColorTemperatureMiredEvent} action_color_temperature_mired
+ * @property {import("../lib/SceneAction.js").ActionColorEvent} action_color
+ * @property {import("../lib/SceneAction.js").ActionColorXYEvent} action_color_xy
+ * @property {import("../lib/SceneAction.js").ActionEffectEvent} action_effect
+ * @property {import("../lib/Gradient.js").ActionGradientColorEvent} action_gradient_color
+ * @property {import("../lib/Gradient.js").ActionGradientColorXYEvent} action_gradient_color_xy
+ * @property {import("../lib/SceneAction.js").ActionDuration} action_duration
+ * @property {AutoDynamicEvent} auto_dynamic
+ * @property {import("../lib/Palette.js").SpeedEvent} speed
+ * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
 export default class Scene extends Resource
@@ -20,12 +46,13 @@ export default class Scene extends Resource
 	static Image =
 	{
 		BRIGHT: "732ff1d9-76a7-4630-aad0-c8acc499bb0b",
-		ENERGIZE: "7fd2ccc5-5749-4142-b7a5-66405a676f03",
-		RELAX: "a1f7da49-d181-4328-abea-68c9dc4b5416",
 		CONCENTRATE: "b90c8900-a6b7-422c-a5d3-e170187dbf8c",
-		READ: "e101a77f-9984-4f61-aac8-15741983c656",
 		DIMMED: "8c74b9ba-6e89-4083-a2a7-b10a1e566fed",
-		NIGHTLIGHT: "28bbfeff-1a0c-444e-bb4b-0b74b88e0c95"
+		ENERGIZE: "7fd2ccc5-5749-4142-b7a5-66405a676f03",
+		NIGHTLIGHT: "28bbfeff-1a0c-444e-bb4b-0b74b88e0c95",
+		READ: "e101a77f-9984-4f61-aac8-15741983c656",
+		RELAX: "a1f7da49-d181-4328-abea-68c9dc4b5416",
+		REST: "11a09ad5-8d65-4e90-959b-f05981a9ab1b"
 	}
 
 	/** @private */
@@ -125,6 +152,22 @@ export default class Scene extends Resource
 		super.emit(eventName, ...args);
 	}
 
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	on(eventName, listener)
+	{return (super.on(eventName, listener))}
+
+	/**
+	 * @template {keyof EventCallback} T
+	 * @param {T} eventName The event name
+	 * @param {EventCallback[T]} listener The listener
+	 */
+	once(eventName, listener)
+	{return (super.once(eventName, listener))}
+
 	getName()
 	{
 		if (this.isExists())
@@ -149,20 +192,25 @@ export default class Scene extends Resource
 		return (this);
 	}
 
+	/**
+	 * Gets if the scene can automatically start dymanic on recall
+	 *
+	 * @returns {boolean}
+	 */
 	isAutoDynamic()
 	{return (this._update.auto_dynamic ?? this._data.auto_dynamic)}
 
 	/**
-	 * Set scene name
+	 * Set scene if the scene recall shoud start dymamic automatically
 	 *
-	 * @param {string} name - The name
+	 * @param {boolean} autoDynamic - True if recall start dymamic automatically
 	 * @returns {Scene|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
-	setAutoDynamic(value)
+	setAutoDynamic(autoDynamic)
 	{
 		let data = (this.isExists()) ? this._update : this._create;
 
-		data.auto_dynamic = value;
+		data.auto_dynamic = autoDynamic;
 		if (this.isExists() && !this._prepareUpdate)
 			return (this.update());
 		return (this);

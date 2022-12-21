@@ -6,7 +6,7 @@ import LightService from "../service/LightService.js";
  * @typedef {import('../service/Service.js').default} Service
  * @typedef {import('../group/Room.js').default} Room
  * @typedef {import('../group/Zone.js').default} Zone
- * @typedef {import('../Resource.js').EventCallback} EventCallbackInherit
+ * @typedef {import('../Device.js').EventCallback} EventCallbackInherit
  */
 /**
  * @typedef EventCallbackTypes

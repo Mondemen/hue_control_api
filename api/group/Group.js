@@ -7,6 +7,8 @@ import GroupedLightService from "../service/GroupedLightService.js";
 const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.length || 1);
 
 /**
+ * @typedef {import("../../lib/Color.js").XYValue} XYValue
+ * @typedef {import("../service/LightService.js").default} LightService
  * @typedef {import('../Device.js').default} Device
  * @typedef {import('../light/Light.js').default} Light
  * @typedef {import('../light/Bulb.js').default} Bulb
@@ -29,6 +31,10 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  *
  * @callback DeleteDeviceEvent
  * @param {Device} device - Deleted device
+ *
+ * |******************|
+ * |   Light events   |
+ * |******************|
  *
  * @callback LightNameEvent
  * @param {Light} light - Updated light
@@ -134,6 +140,80 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  * @param {Light} light - Updated light
  * @param {Mired} mired - The color temperature
  *
+ * |******************|
+ * |   Scene events   |
+ * |******************|
+ *
+ * @callback SceneNameEvent
+ * @param {Scene} scene - Updated scene
+ * @param {string} name - Name of device
+ *
+ * @callback SceneEventStart
+ * @param {Scene} scene - Updated scene
+ *
+ * @callback SceneEventEnd
+ * @param {Scene} scene - Updated scene
+ *
+ * @callback SceneActionStateEvent
+ * @param {Scene} scene - Updated scene
+ * @param {Light} light - Light attached to the action
+ * @param {LightService.State[keyof typeof LightService.State]} state - The state of light
+ *
+ * @callback SceneActionBrightnessEvent
+ * @param {Scene} scene - Updated scene
+ * @param {Bulb} light - Light attached to the action
+ * @param {number} brighness - The brightness of light
+ *
+ * @callback SceneActionColorTemperatureEvent
+ * @param {Scene} scene - Updated scene
+ * @param {WhiteAmbianceBulb} light - Light attached to the action
+ * @param {Mired} mirek - The color temperature of light
+ *
+ * @callback SceneActionColorTemperatureMiredEvent
+ * @param {Scene} scene - Updated scene
+ * @param {WhiteAmbianceBulb} light - Light attached to the action
+ * @param {number} mirek - The color temperature of light in mired format
+ *
+ * @callback SceneActionColorEvent
+ * @param {Scene} scene - Updated scene
+ * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
+ * @param {Color} color - The color of light
+ *
+ * @callback SceneActionColorXYEvent
+ * @param {Scene} scene - Updated scene
+ * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
+ * @param {XYValue} color - The color of light in XY format
+ *
+ * @callback SceneActionEffectEvent
+ * @param {Scene} scene - Updated scene
+ * @param {Bulb} light - Light attached to the action
+ * @param {LightService.Effect[keyof typeof LightService.Effect]} effect - The effect of light
+ *
+ * @callback SceneActionGradientColorEvent
+ * @param {Scene} scene - Updated scene
+ * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
+ * @param {number} i - Index position of color in array
+ * @param {Color} color - The color
+ *
+ * @callback SceneActionGradientColorXYEvent
+ * @param {Scene} scene - Updated scene
+ * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
+ * @param {number} i - Index position of color in array
+ * @param {XYValue} color - The color in XY format
+ *
+ * @callback SceneActionDuration
+ * @param {Scene} scene - Updated scene
+ * @param {Light} light - Light attached to the action
+ * @param {number} duration - The duration of transition
+ *
+ * @callback SceneAutoDynamicEvent
+ * @param {Scene} scene - Updated scene
+ * @param {boolean} autoDynamic - Archetype of device
+ *
+ * @callback SceneSpeedEvent
+ * @param {Scene} scene - Updated scene
+ * @param {number} speed - The speed of dynamic
+ *
  * @typedef EventCallbackTypes
  * @type {Object}
  * @property {NameEvent} name
@@ -166,6 +246,19 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  * @property {LightPowerupColorModeEvent} light_powerup_color_mode
  * @property {LightPowerupColorEvent} light_powerup_color
  * @property {LightPowerupColorTemperatureEvent} light_powerup_color_temperature
+ * @property {SceneNameEvent} scene_name
+ * @property {SceneActionStateEvent} scene_action_state
+ * @property {SceneActionBrightnessEvent} scene_action_brightness
+ * @property {SceneActionColorTemperatureEvent} scene_action_color_temperature
+ * @property {SceneActionColorTemperatureMiredEvent} scene_action_color_temperature_mired
+ * @property {SceneActionColorEvent} scene_action_color
+ * @property {SceneActionColorXYEvent} scene_action_color_xy
+ * @property {SceneActionEffectEvent} scene_action_effect
+ * @property {SceneActionGradientColorEvent} scene_action_gradient_color
+ * @property {SceneActionGradientColorXYEvent} scene_action_gradient_color_xy
+ * @property {SceneActionDuration} scene_action_duration
+ * @property {SceneAutoDynamicEvent} scene_auto_dynamic
+ * @property {SceneSpeedEvent} scene_speed
  * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
