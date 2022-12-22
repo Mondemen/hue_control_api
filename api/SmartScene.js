@@ -1,9 +1,8 @@
 import Resource from "./Resource.js";
-import Light from "./light/Light.js";
-import SceneAction from "../lib/SceneAction.js";
-import Palette from "../lib/Palette.js";
 import {checkParam} from "../utils/index.js";
 import ErrorCodes from "../lib/error/ErrorCodes.js";
+import WeekTimeslot from "../lib/WeekTimeslot.js";
+import util from "util";
 
 /**
  * @typedef {import('./group/Group.js').default} Group
@@ -35,7 +34,7 @@ import ErrorCodes from "../lib/error/ErrorCodes.js";
  * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
-export default class Scene extends Resource
+export default class SmartScene extends Resource
 {
 	/**
 	 * Image of scene
@@ -45,14 +44,19 @@ export default class Scene extends Resource
 	 */
 	static Image =
 	{
-		BRIGHT: "732ff1d9-76a7-4630-aad0-c8acc499bb0b",
-		CONCENTRATE: "b90c8900-a6b7-422c-a5d3-e170187dbf8c",
-		DIMMED: "8c74b9ba-6e89-4083-a2a7-b10a1e566fed",
-		ENERGIZE: "7fd2ccc5-5749-4142-b7a5-66405a676f03",
-		NIGHTLIGHT: "28bbfeff-1a0c-444e-bb4b-0b74b88e0c95",
-		READ: "e101a77f-9984-4f61-aac8-15741983c656",
-		RELAX: "a1f7da49-d181-4328-abea-68c9dc4b5416",
-		REST: "11a09ad5-8d65-4e90-959b-f05981a9ab1b"
+		NATURALLIGHT: "eb014820-a902-4652-8ca7-6e29c03b87a1"
+	}
+
+	/**
+	 * State of smart scene
+	 *
+	 * @enum {string}
+	 * @readonly
+	 */
+	static State =
+	{
+		ACTIVE: "active",
+		INACTIVE: "inactive"
 	}
 
 	/**
@@ -63,28 +67,22 @@ export default class Scene extends Resource
 	 */
 	static Action =
 	{
-		ACTIVE: "active",
-		DYNAMIC_PALETTE: "dynamic_palette",
-		STATIC: "static"
+		ACTIVATE: "activate",
+		DEACTIVATE: "deactivate"
 	}
 
 	/** @private */
-	_type = "scene";
+	_type = "smart_scene";
 	/**
 	 * @type {Group}
 	 * @private
 	 * */
 	_group;
 	/**
-	 * @type {Object<string, SceneAction}
+	 * @type {WeekTimeslot[]}
 	 * @private
-	 * */
-	_actions = {};
-	/**
-	 * @type {Palette}
-	 * @private
-	*/
-	_palette = new Palette(this);
+	 */
+	_weekTimeslots = [];
 
 	constructor(bridge, data)
 	{
@@ -97,37 +95,37 @@ export default class Scene extends Resource
 		{
 			...super[Symbol.for('nodejs.util.inspect.custom')](),
 			group: this._group,
-			actions: this._actions,
-			palette: this._palette
+			weekTimeslots: this._weekTimeslots
 		})
 	}
 
-	/**
-	 * Sets data
-	 *
-	 * @private
-	 * @param {Object} data The data
-	 */
 	_setData(data)
 	{
-		let light;
+		let weekTimeslot;
 
 		super._setData(data);
 		if (data?.metadata?.name != undefined && this._data.name != data?.metadata?.name)
 			this.emit("name", this._data.name = data?.metadata?.name);
 		this._data.image = data?.metadata?.image?.rid ?? this._data.image;
-		if (data?.auto_dynamic != undefined && this._data.auto_dynamic != data?.auto_dynamic)
-			this.emit("auto_dynamic", this._data.auto_dynamic = data.auto_dynamic);
-		data?.actions?.forEach(action =>
+		data?.week_timeslots?.forEach((weekTimeslotData, index) =>
 		{
-			light = this._bridge._resources[`${action.target.rtype}/${action.target.rid}`].getOwner?.();
-			if (light)
-			{
-				this._actions[light.getID()] ??= new SceneAction(this, light);
-				this._actions[light.getID()]._setData(action.action);
-			}
+			weekTimeslot = this._weekTimeslots[index] ?? new WeekTimeslot(this, index);
+			weekTimeslot._setData(weekTimeslotData);
+			this._weekTimeslots.push(weekTimeslot);
 		})
-		this._palette._setData(data);
+		if (data?.active_timeslot?.timeslot_id != undefined && data.active_timeslot.timeslot_id != this._data.currentTimeslot)
+			this.emit("current_timeslot", this._weekTimeslots[this._data.currentTimeslot = data.active_timeslot.timeslot_id]);
+		if (data?.active_timeslot?.weekday && data.active_timeslot.weekday != this._data.currentWeekday)
+			this.emit("current_weekday", this._data.currentWeekday = data.active_timeslot.weekday);
+		if (data?.state && data?.state != this._data.state)
+			this.emit("state", this._data.state = data?.state);
+		if (data?.recall?.action)
+		{
+			if (data.recall.action == SmartScene.Action.ACTIVATE)
+				this.emit("state", this._data.state = SmartScene.State.ACTIVE);
+			else if (data.recall.action == SmartScene.Action.DEACTIVATE)
+				this.emit("state", this._data.state = SmartScene.State.INACTIVE);
+		}
 	}
 
 	_add()
@@ -206,30 +204,6 @@ export default class Scene extends Resource
 		return (this);
 	}
 
-	/**
-	 * Gets if the scene can automatically start dymanic on recall
-	 *
-	 * @returns {boolean}
-	 */
-	isAutoDynamic()
-	{return (this._update.auto_dynamic ?? this._data.auto_dynamic)}
-
-	/**
-	 * Set scene if the scene recall shoud start dymamic automatically
-	 *
-	 * @param {boolean} autoDynamic - True if recall start dymamic automatically
-	 * @returns {Scene|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
-	 */
-	setAutoDynamic(autoDynamic)
-	{
-		let data = (this.isExists()) ? this._update : this._create;
-
-		data.auto_dynamic = autoDynamic;
-		if (this.isExists() && !this._prepareUpdate)
-			return (this.update());
-		return (this);
-	}
-
 	getImage()
 	{return (this._data.image)}
 
@@ -259,54 +233,79 @@ export default class Scene extends Resource
 	getGroup()
 	{return (this._group)}
 
-	getPalette()
-	{return (this._palette)}
+	getWeekTimeslots()
+	{return (this._weekTimeslots)}
 
-	/**
-	 * Gets action data from light
-	 *
-	 * @param {Light} light The light
-	 * @returns {SceneAction}
-	 */
-	getAction(light)
+	getWeekTimeslotFromWeekday(weekday)
+	{return (this._weekTimeslots.find(weekTimeslot => weekTimeslot.getWeekdays().has(weekday)))}
+
+	addWeekTimeslot()
 	{
-		checkParam(this, "getAction", "light", light, Light);
-		this._actions[light.getID()] ??= new SceneAction(this, light);
-		return (this._actions[light.getID()]);
+		let weekTimeslot = new WeekTimeslot(this, this._weekTimeslots.length);
+
+		this._weekTimeslots.push(weekTimeslot);
+		return (weekTimeslot);
+	}
+
+	deleteWeekTimeslot(index)
+	{
+		this._weekTimeslots.splice(index, 1);
+		this._weekTimeslots.forEach((weekTimeslot, i) => weekTimeslot._index = i);
+	}
+
+	clearWeekTimeslot()
+	{this._weekTimeslots = []}
+
+	getCurrentWeekTimeslot()
+	{return (this._weekTimeslots.find(weekTimeslot => weekTimeslot.getWeekdays().has(this._data.currentWeekday)))}
+
+	getCurrentTimeslot()
+	{return (this.getCurrentWeekTimeslot()?.getTimeslots()?.[this._data.currentTimeslot])}
+
+	getState()
+	{
+		if (this._update.recall?.action)
+		{
+			if (this._update.recall.action == SmartScene.Action.ACTIVATE)
+				return (SmartScene.State.ACTIVE);
+			return (SmartScene.State.INACTIVE);
+		}
+		return (this._data.state);
 	}
 
 	/**
-	 * Gets the list of actions
+	 * Set state of light
 	 *
-	 * @returns {SceneAction[]}
+	 * @param {SmartScene.State[keyof typeof SmartScene.State]} state - The state
+	 * @returns {SmartScene|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
 	 */
-	getActions()
-	{return (Object.values(this._actions))}
+	setState(state)
+	{
+		checkParam(this, "setState", "state", state, SmartScene.State, "SmartScene.State");
+		if (state == SmartScene.State.ACTIVE)
+			this._update.recall = {action: SmartScene.Action.ACTIVATE};
+		else if (state == SmartScene.State.INACTIVE)
+			this._update.recall = {action: SmartScene.Action.DEACTIVATE};
+		if (this._prepareUpdate)
+			return (this);
+		return (this.update());
+	}
 
 	async create()
 	{
-		let actions;
-		let colorLight, miredLight;
-
-		actions = Object.values(this._actions);
-		colorLight = actions.find(action => action._data?.color?.xy);
-		miredLight = actions.find(action => action._data?.color_temperature?.mirek);
-		if (!this._palette.getColors().length && colorLight)
-			this._palette.addColor(colorLight._data.color.xy, colorLight.getBrightness());
-		if (!this._palette.getColorTemperature() && miredLight)
-			this._palette.setColorTemperature(miredLight.getColorTemperature(), miredLight.getBrightness());
 		this._create =
 		{
 			type: this._type,
-			...this._create,
 			group:
 			{
 				rid: this._group.getID(),
 				rtype: this._group.getType()
 			},
-			actions: actions.map(action => action._getData()),
-			...this._palette._getData()
+			...this._create,
+			week_timeslots: this._weekTimeslots.map(weekTimeslot => weekTimeslot._getData())
 		};
+		console.log("CREATE", util.inspect(this._create, false, null, true));
+		// return;
 		await super.create();
 		this._exists = true;
 		this._group._addScene(this);
@@ -320,78 +319,56 @@ export default class Scene extends Resource
 
 	async update()
 	{
-		if (Object.values(this._actions).find(action => action._updated))
-			this._update.actions = Object.values(this._actions).map(action => action._getData());
-		this._update = {...this._update, ...this._palette._getData()};
+		if (this._weekTimeslots.find(timeslot => timeslot._updated))
+			this._update.week_timeslots = this._weekTimeslots.map(weekTimeslot => weekTimeslot._getData());
+		console.log("UPDATE", util.inspect(this._update, false, null, true));
 		await super.update();
 	}
 
-	async applyDynamic(brightness, transitionTime)
+	async activate()
 	{
 		let isExists = this.isExists();
 		let error;
 
 		if (!isExists)
+		{
+			this.setState(SmartScene.State.ACTIVE);
 			await this.create();
-		this._update.recall = {action: Scene.Action.DYNAMIC_PALETTE};
-		if (brightness != undefined)
-			this._update.recall.dimming = {brightness};
-		if (transitionTime != undefined)
-			this._update.recall.duration = transitionTime;
-		try
-		{await this.update()}
-		catch (err)
-		{error = err}
-		finally
-		{this._update = {}}
+		}
+		else
+		{
+			try
+			{await this.update()}
+			catch (err)
+			{error = err}
+			finally
+			{this._update = {}}
+		}
 		if (!isExists)
 			await this.delete();
 		if (error)
 			throw error;
 	}
 
-	async applyStatic(brightness, transitionTime)
+	async deactivate()
 	{
 		let isExists = this.isExists();
 		let error;
 
 		if (!isExists)
+		{
+			this.setState(SmartScene.State.INACTIVE);
 			await this.create();
-		this._update.recall = {action: Scene.Action.STATIC};
-		if (brightness != undefined)
-			this._update.recall.dimming = {brightness};
-		if (transitionTime != undefined)
-			this._update.recall.duration = transitionTime;
-		try
-		{await this.update()}
-		catch (err)
-		{error = err}
-		finally
-		{this._update = {}}
-		if (!isExists)
-			await this.delete();
-		if (error)
-			throw error;
-	}
-
-	async activate(brightness, transitionTime)
-	{
-		let isExists = this.isExists();
-		let error;
-
-		if (!isExists)
-			await this.create();
-		this._update.recall = {action: Scene.Action.ACTIVE};
-		if (brightness != undefined)
-			this._update.recall.dimming = {brightness};
-		if (transitionTime != undefined)
-			this._update.recall.duration = transitionTime;
-		try
-		{await this.update()}
-		catch (err)
-		{error = err}
-		finally
-		{this._update = {}}
+		}
+		else
+		{
+			try
+			{await this.update()}
+			catch (err)
+			{error = err}
+			finally
+			{this._update = {}}
+		}
 		if (!isExists)
 			await this.delete();
 		if (error)

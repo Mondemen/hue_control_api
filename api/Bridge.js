@@ -24,6 +24,7 @@ import Room from "./group/Room.js";
 import Zone from "./group/Zone.js";
 import BridgeHome from "./group/BridgeHome.js";
 import Scene from "./Scene.js";
+import SmartScene from "./SmartScene.js";
 
 // import util from "util";
 // import {createRequire} from 'module';
@@ -96,7 +97,8 @@ export default class Bridge extends Device
 			Room,
 			Zone,
 			BridgeHome,
-			Scene
+			Scene,
+			SmartScene
 		})
 	}
 
@@ -399,15 +401,23 @@ export default class Bridge extends Device
 
 	addResources(resources)
 	{
-		let devices, groups, scenes, services;
+		let types = {};
+		let devices, groups, scenes, smartScenes, services;
 
-		devices = resources.data.filter(device => device.type.toLowerCase() == "device");
-		groups = resources.data.filter(group => ["zone", "room", "bridge_home"].includes(group.type.toLowerCase()));
-		scenes = resources.data.filter(device => device.type.toLowerCase() == "scene");
-		services = resources.data.filter(service => !["device", "zone", "room", "bridge_home", "scene"].includes(service.type.toLowerCase()));
+		types.devices = ["device"];
+		types.groups = ["zone", "room", "bridge_home"];
+		types.scenes = ["scene"];
+		types.smartScenes = ["smart_scene"];
+
+		devices = resources.data.filter(device => types.devices.includes(device.type.toLowerCase()));
+		groups = resources.data.filter(group => types.groups.includes(group.type.toLowerCase()));
+		scenes = resources.data.filter(device => types.scenes.includes(device.type.toLowerCase()));
+		smartScenes = resources.data.filter(device => types.smartScenes.includes(device.type.toLowerCase()));
+		services = resources.data.filter(service => !Object.values(types).flat().includes(service.type.toLowerCase()));
 		devices?.forEach?.(resource => this.setResource(resource, services));
 		groups?.forEach?.(resource => this.setResource(resource, services));
 		scenes?.forEach?.(resource => this.setResource(resource, services));
+		smartScenes?.forEach?.(resource => this.setResource(resource, services));
 		services?.forEach?.(resource => this.setResource(resource, services));
 	}
 
@@ -558,6 +568,20 @@ export default class Bridge extends Device
 				this._resources[resource._id] ??= resource;
 				break;
 			}
+			case Resource.Type.SMART_SCENE:
+			{
+				group = this.getGroup(data.group.rid);
+				if (!(resource = this.getScene(data.id)))
+					resource = new SmartScene(this);
+				resource._setData(data);
+				resource._setGroup(group);
+				group._addScene(resource);
+				if (!resource._init)
+					resource._add();
+				// console.log(resource._id, resource, resource instanceof SmartScene);
+				this._resources[resource._id] ??= resource;
+				break;
+			}
 			default:
 			{
 				resource = new Resource(this, data);
@@ -653,19 +677,19 @@ export default class Bridge extends Device
 	 /**
 	 * Gets the list of scene
 	 *
-	 * @returns {Scene[]} The list of Group
+	 * @returns {(Scene|SmartScene)[]} The list of Group
 	 */
 	getScenes()
-	{return (Object.values(this._resources).filter(resource => resource instanceof Scene))}
+	{return (Object.values(this._resources).filter(resource => resource instanceof Scene || resource instanceof SmartScene))}
 
 	/**
 	 * Gets scene from ID
 	 *
 	 * @param {string} id The ID
-	 * @returns {Scene} The Group
+	 * @returns {Scene|SmartScene} The Group
 	 */
 	getScene(id)
-	{return (this._resources[`device/${id}`])}
+	{return (this._resources[`scene/${id}`])}
 
 	describe()
 	{

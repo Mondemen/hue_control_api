@@ -1,8 +1,10 @@
+import ErrorCodes from "../../lib/error/ErrorCodes.js";
 import MinimalLengthError from "../../lib/error/MinimalLengthError.js";
 import Light from "../light/Light.js";
 import Resource from "../Resource.js";
 import Scene from "../Scene.js";
 import GroupedLightService from "../service/GroupedLightService.js";
+import SmartScene from "../SmartScene.js";
 
 const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.length || 1);
 
@@ -285,7 +287,7 @@ export default class Group extends Resource
 	 */
 	 _services = {};
 	/**
-	 * @type {Object<string,Scene>}
+	 * @type {Object<string,(Scene|SmartScene)>}
 	 * @private
 	 */
 	_scenes = {};
@@ -381,19 +383,19 @@ export default class Group extends Resource
 	/**
 	 * Add Scene
 	 *
-	 * @param {Scene} scene The scene
+	 * @param {Scene|SmartScene} scene The scene
 	 * @protected
 	 */
 	_addScene(scene)
 	{
-		if (scene instanceof Scene)
+		if (scene instanceof Scene || scene instanceof SmartScene)
 			this._scenes[scene.getID()] = scene;
 	}
 
 	/**
 	 * Delete Scene
 	 *
-	 * @param {Scene|string} scene The scene
+	 * @param {Scene|SmartScene|string} scene The scene
 	 * @protected
 	 */
 	_deleteScene(scene)
@@ -429,9 +431,31 @@ export default class Group extends Resource
 		return (scene);
 	}
 
+	createSmartScene()
+	{
+		let scene;
+
+		if (this.getScenes().find(scene => scene instanceof SmartScene))
+			throw {code: ErrorCodes.alreadyExists, message: ["The group already have smart scene"]};
+		scene = new SmartScene(this._bridge);
+		scene._exists = false;
+		scene._setGroup(this);
+		return (scene);
+	}
+
+	/**
+	 * Get list of scene attached to this group
+	 *
+	 * @returns {(Scene|SmartScene)[]}
+	 */
 	getScenes()
 	{return (Object.values(this._scenes))}
 
+	/**
+	 * Get list of scene attached to this group
+	 *
+	 * @returns {Scene|SmartScene}
+	 */
 	getScene(id)
 	{return (this._scenes[id])}
 

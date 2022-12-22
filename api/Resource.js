@@ -59,9 +59,11 @@ export default class Resource extends EventEmitter
 		PUBLIC_IMAGE: "public_image",
 		ROOM: "room",
 		SCENE: "scene",
+		SMART_SCENE: "smart_scene",
 		TEMPERATURE: "temperature",
 		ZGP_CONNECTIVITY: "zgp_connectivity",
 		ZIGBEE_BRIDGE_CONNECTIVITY: "zigbee_bridge_connectivity",
+		ZIGBEE_DEVICE_DISCOVERY: "zigbee_device_discovery",
 		ZIGBEE_CONNECTIVITY: "zigbee_connectivity",
 		ZONE: "zone"
 	}
@@ -119,8 +121,7 @@ export default class Resource extends EventEmitter
 		{
 			_id: this._id,
 			id: this._data.id ?? this._data.rid,
-			type: this._data.type ?? this._data.rtype,
-			data
+			type: this._data.type ?? this._data.rtype
 		})
 	}
 
@@ -321,7 +322,7 @@ export default class Resource extends EventEmitter
 		if (data)
 			this._setData(data);
 		else
-			throw {code: ErrorCodes.notCreated, message: ["Resource not create due to error"]}
+			throw {code: ErrorCodes.notCreated, message: "Resource not create due to error"}
 		return (data);
 	}
 

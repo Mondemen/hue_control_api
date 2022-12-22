@@ -1,6 +1,7 @@
 export {default as Bridge} from "./api/Bridge.js";
 export {default as Resource} from "./api/Resource.js";
 export {default as Scene} from "./api/Scene.js";
+export {default as SmartScene} from "./api/SmartScene.js";
 export {default as Device} from "./api/Device.js";
 
 export {default as Connector} from "./lib/Connector.js";
@@ -10,6 +11,11 @@ export {default as Palette} from "./lib/Palette.js";
 export {default as Gradient} from "./lib/Gradient.js";
 export {default as Powerup} from "./lib/Powerup.js";
 export {default as SceneAction} from "./lib/SceneAction.js";
+export {default as Timeslot} from "./lib/Timeslot.js";
+export {default as WeekTimeslot} from "./lib/WeekTimeslot.js";
+export {default as Time} from "./lib/time/Time.js";
+export {default as TimeMinute} from "./lib/time/TimeMinute.js";
+export {default as TimeSecond} from "./lib/time/TimeSecond.js";
 
 export {default as Bulb} from "./api/light/Bulb.js";
 export {default as ColorBulb} from "./api/light/ColorBulb.js";
