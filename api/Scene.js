@@ -29,6 +29,7 @@ import ErrorCodes from "../lib/error/ErrorCodes.js";
  * @property {import("../lib/SceneAction.js").ActionEffectEvent} action_effect
  * @property {import("../lib/Gradient.js").ActionGradientColorEvent} action_gradient_color
  * @property {import("../lib/Gradient.js").ActionGradientColorXYEvent} action_gradient_color_xy
+ * @property {import("../lib/Gradient.js").ActionGradientModeEvent} action_gradient_mode
  * @property {import("../lib/SceneAction.js").ActionDuration} action_duration
  * @property {AutoDynamicEvent} auto_dynamic
  * @property {import("../lib/Palette.js").SpeedEvent} speed

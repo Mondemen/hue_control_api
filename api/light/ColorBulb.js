@@ -12,6 +12,7 @@ import WhiteBulb from "./WhiteBulb.js";
  * @property {import("../service/LightService.js").ColorXYEvent} color_xy
  * @property {import("../../lib/Gradient.js").GradientColorEvent} gradient_color
  * @property {import("../../lib/Gradient.js").GradientColorXYEvent} gradient_color_xy
+ * @property {import("../../lib/Gradient.js").GradientModeEvent} gradient_mode
  * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
