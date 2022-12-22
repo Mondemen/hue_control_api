@@ -113,14 +113,10 @@ export default class Resource extends EventEmitter
 
 	[Symbol.for('nodejs.util.inspect.custom')]()
 	{
-		let data = {...this._data};
-
-		delete data.id;
-		delete data.type;
-		return (
-		{
+		return ({
 			_id: this._id,
 			id: this._data.id ?? this._data.rid,
+			id_v1: this._data.id_v1,
 			type: this._data.type ?? this._data.rtype
 		})
 	}

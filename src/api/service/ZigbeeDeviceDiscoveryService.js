@@ -25,6 +25,15 @@ export default class ZigbeeDeviceDiscoveryService extends Service
 		super(bridge, data);
 	}
 
+	[Symbol.for('nodejs.util.inspect.custom')]()
+	{
+		return ({
+			...super[Symbol.for('nodejs.util.inspect.custom')](),
+			...this._data,
+			search_codes: this._searchCodes
+		})
+	}
+
 	_setData(data, update = false)
 	{
 		super._setData(data, update);

@@ -3,11 +3,11 @@ import {checkParam} from "../utils/index.js";
 import ErrorCodes from "../lib/error/ErrorCodes.js";
 import WeekTimeslot from "../lib/WeekTimeslot.js";
 import util from "util";
-import {Timeslot} from "../index.js";
 
 /**
  * @typedef {import('./group/Group.js').default} Group
  * @typedef {import('./Resource.js').EventCallback} EventCallbackInherit
+ * @typedef {import('../lib/Timeslot.js').default} Timeslot
  */
 
 /**

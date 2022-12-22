@@ -122,6 +122,11 @@ export default class Bridge extends Device
 	 */
 	_stream;
 	/**
+	 * @type {BridgeService}
+	 * @private
+	 */
+	_bridgeData;
+	/**
 	 * @type {BridgeHome}
 	 * @private
 	 */
@@ -131,11 +136,6 @@ export default class Bridge extends Device
 	 * @private
 	 */
 	_deviceDiscoverer;
-	/**
-	 * @type {BridgeService}
-	 * @private
-	 */
-	_bridgeData;
 	/** @private */
 	_connectivity;
 	/** @private */
@@ -590,7 +590,6 @@ export default class Bridge extends Device
 				group._addScene(resource);
 				if (!resource._init)
 					resource._add();
-				// console.log(resource._id, resource, resource instanceof SmartScene);
 				this._resources[resource._id] ??= resource;
 				break;
 			}

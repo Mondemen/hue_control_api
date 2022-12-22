@@ -1,10 +1,11 @@
 {
 	// Change this to match your project
-	"include": ["index.js", "api/**/*", "lib/**/*", "utils/**/*"],
+	"include": ["src/**/*"],
 	"compilerOptions": {
 	  // Tells TypeScript to read JS files, as
 	  // normally they are ignored as source files
 	  "allowJs": true,
+	  "target": "ES2022",
 	  // Generate d.ts files
 	  "declaration": true,
 	  // This compiler run should

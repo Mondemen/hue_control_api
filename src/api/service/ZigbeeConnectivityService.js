@@ -10,12 +10,12 @@ export default class ZigbeeConnectivityService extends ConnectivityService
 	_setData(data, update = false)
 	{
 		super._setData(data, update);
-		this._data.macAddress = data?.macAddress;
+		this._data.macAddress = data?.mac_address;
 	}
 
 	/**
 	 * Gets the mac address of the device
-	 * 
+	 *
 	 * @returns {string} The mac address
 	 */
 	getMacAddress()

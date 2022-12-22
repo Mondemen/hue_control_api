@@ -175,8 +175,8 @@ Below thte list of features currently supported by this library
 | Get V1 ID        | :heavy_check_mark: | :heavy_check_mark: |
 | Get name         | :heavy_check_mark: | :heavy_check_mark: |
 | Set name         | :heavy_check_mark: | :heavy_check_mark: |
-| Get archtype     | :heavy_check_mark: | :heavy_check_mark: |
-| Set archtype     | :heavy_check_mark: | :heavy_check_mark: |
+| Get archetype    | :heavy_check_mark: | :heavy_check_mark: |
+| Set archetype    | :heavy_check_mark: | :heavy_check_mark: |
 | Get product data | :x:                | :x:                |
 | Get service list | :heavy_check_mark: | :heavy_check_mark: |
 | Get room         | :heavy_check_mark: | :heavy_check_mark: |
@@ -212,6 +212,7 @@ Below thte list of features currently supported by this library
 | Set zone                | :x:                | :x:                |
 
 >  \* Compliant with Philips Hue API but not tested with physical device
+
 >  ** New feature documented by Philips but not released, so not testable (sunrise effect)
 
 ### Accessory
@@ -260,8 +261,8 @@ No additional support currently
 | Delete                         | :heavy_check_mark: | :heavy_check_mark: |
 | Get name                       | :heavy_check_mark: | :heavy_check_mark: |
 | Set name                       | :heavy_check_mark: | :heavy_check_mark: |
-| Get archtype                   | :heavy_check_mark: | :heavy_check_mark: |
-| Set archtype                   | :heavy_check_mark: | :heavy_check_mark: |
+| Get archetype                  | :heavy_check_mark: | :heavy_check_mark: |
+| Set archetype                  | :heavy_check_mark: | :heavy_check_mark: |
 | Create scene                   | :heavy_check_mark: | :heavy_check_mark: |
 | Get state                      | :heavy_check_mark: | :heavy_check_mark: |
 | Set state                      | :heavy_check_mark: | :heavy_check_mark: |

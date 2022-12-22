@@ -5,7 +5,7 @@ import { checkParam } from "../../utils/index.js";
 import LightService from "./LightService.js";
 import Service from "./Service.js";
 
-/** @typedef {import("../service/LightService.js").ColorValue} ColorValue */
+/** @typedef {import("./LightService.js").ColorValue} ColorValue */
 
 export default class GroupedLightService extends Service
 {

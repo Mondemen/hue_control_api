@@ -8,10 +8,19 @@ export default class Service extends Resource
 	 * @private
 	 */
 	_owner;
-	
+
 	constructor(bridge, data)
 	{
 		super(bridge, data);
+	}
+
+	[Symbol.for('nodejs.util.inspect.custom')]()
+	{
+		return (
+		{
+			...super[Symbol.for('nodejs.util.inspect.custom')](),
+			...this._data
+		})
 	}
 
 	setOwner(owner)
