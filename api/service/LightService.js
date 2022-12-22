@@ -134,7 +134,7 @@ export default class LightService extends Service
 		if (data?.gradient)
 		{
 			this._gradient ??= new Gradient(this);
-			this._gradient._setData(data);
+			this._gradient._setData(data.gradient);
 		}
 		if (data?.powerup)
 		{
@@ -170,7 +170,6 @@ export default class LightService extends Service
 	 */
 	setState(state, sender = this)
 	{
-		this.getState()
 		checkParam(this, "setState", "state", state, "boolean");
 		LightData.setState(this._update, state);
 		if (sender._prepareUpdate)
