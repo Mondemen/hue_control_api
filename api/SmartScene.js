@@ -3,6 +3,7 @@ import {checkParam} from "../utils/index.js";
 import ErrorCodes from "../lib/error/ErrorCodes.js";
 import WeekTimeslot from "../lib/WeekTimeslot.js";
 import util from "util";
+import {Timeslot} from "../index.js";
 
 /**
  * @typedef {import('./group/Group.js').default} Group
@@ -13,24 +14,35 @@ import util from "util";
  * @callback NameEvent
  * @param {string} name - Name of device
  *
- * @callback AutoDynamicEvent
- * @param {boolean} autoDynamic - Archetype of device
+ * @callback CurrentTimeslotIDEvent
+ * @param {number} timeslot_id - Current timeslot ID
+ *
+ * @callback CurrentTimeslotEvent
+ * @param {Timeslot} timeslot - Current timeslot
+ *
+ * @callback CurrentWeekdayEvent
+ * @param {WeekTimeslot.Weekday[keyof typeof WeekTimeslot.Weekday]} weekday - Current weekday
+ *
+ * @callback CurrentWeekTimeslotEvent
+ * @param {WeekTimeslot} weektimeslot - Current week timeslot
+ *
+ * @callback StateEvent
+ * @param {SmartScene.State} state - State
  *
  * @typedef EventCallbackTypes
  * @type {Object}
  * @property {NameEvent} name
- * @property {import("../lib/SceneAction.js").ActionStateEvent} action_state
- * @property {import("../lib/SceneAction.js").ActionBrightnessEvent} action_brightness
- * @property {import("../lib/SceneAction.js").ActionColorTemperatureEvent} action_color_temperature
- * @property {import("../lib/SceneAction.js").ActionColorTemperatureMiredEvent} action_color_temperature_mired
- * @property {import("../lib/SceneAction.js").ActionColorEvent} action_color
- * @property {import("../lib/SceneAction.js").ActionColorXYEvent} action_color_xy
- * @property {import("../lib/SceneAction.js").ActionEffectEvent} action_effect
- * @property {import("../lib/Gradient.js").ActionGradientColorEvent} action_gradient_color
- * @property {import("../lib/Gradient.js").ActionGradientColorXYEvent} action_gradient_color_xy
- * @property {import("../lib/SceneAction.js").ActionDuration} action_duration
- * @property {AutoDynamicEvent} auto_dynamic
- * @property {import("../lib/Palette.js").SpeedEvent} speed
+ * @property {CurrentTimeslotIDEvent} current_timeslot_id
+ * @property {CurrentTimeslotEvent} current_timeslot
+ * @property {CurrentWeekdayEvent} current_weekday
+ * @property {CurrentWeekTimeslotEvent} current_week_timeslot
+ * @property {import("../lib/time/Time.js").HourEvent} week_timeslot_time_hour
+ * @property {import("../lib/time/TimeMinute.js").MinuteEvent} week_timeslot_time_minute
+ * @property {import("../lib/time/TimeSecond.js").SecondEvent} week_timeslot_time_second
+ * @property {import("../lib/Timeslot.js").TimeEvent} week_timeslot_time
+ * @property {import("../lib/Timeslot.js").SceneEvent} week_timeslot_scene
+ * @property {import("../lib/WeekTimeslot.js").WeekdaysEvent} week_weekdays
+ * @property {State} state
  * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
@@ -114,9 +126,16 @@ export default class SmartScene extends Resource
 			this._weekTimeslots.push(weekTimeslot);
 		})
 		if (data?.active_timeslot?.timeslot_id != undefined && data.active_timeslot.timeslot_id != this._data.currentTimeslot)
-			this.emit("current_timeslot", this._weekTimeslots[this._data.currentTimeslot = data.active_timeslot.timeslot_id]);
+		{
+
+			this.emit("current_timeslot_id", this._data.currentTimeslot = data.active_timeslot.timeslot_id);
+			this.emit("current_timeslot", this.getCurrentTimeslot());
+		}
 		if (data?.active_timeslot?.weekday && data.active_timeslot.weekday != this._data.currentWeekday)
+		{
 			this.emit("current_weekday", this._data.currentWeekday = data.active_timeslot.weekday);
+			this.emit("current_week_timeslot", this.getCurrentWeekTimeslot());
+		}
 		if (data?.state && data?.state != this._data.state)
 			this.emit("state", this._data.state = data?.state);
 		if (data?.recall?.action)
