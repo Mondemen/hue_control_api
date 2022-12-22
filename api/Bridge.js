@@ -19,6 +19,7 @@ import Service from "./service/Service.js";
 import TemperatureService from "./service/TemperatureService.js";
 import ZGPConnectivityService from "./service/ZGPConnectivityService.js";
 import ZigbeeConnectivityService from "./service/ZigbeeConnectivityService.js";
+import ZigbeeDeviceDiscoveryService from "./service/ZigbeeDeviceDiscoveryService.js";
 import Group from "./group/Group.js";
 import Room from "./group/Room.js";
 import Zone from "./group/Zone.js";
@@ -93,6 +94,7 @@ export default class Bridge extends Device
 			TemperatureService,
 			ZGPConnectivityService,
 			ZigbeeConnectivityService,
+			ZigbeeDeviceDiscoveryService,
 			Group,
 			Room,
 			Zone,
@@ -119,8 +121,16 @@ export default class Bridge extends Device
 	 * @private
 	 */
 	_stream;
-	/** @private */
+	/**
+	 * @type {BridgeHome}
+	 * @private
+	 */
 	_bridgeHome;
+	/**
+	 * @type {ZigbeeDeviceDiscoveryService}
+	 * @private
+	 */
+	_deviceDiscoverer;
 	/**
 	 * @type {BridgeService}
 	 * @private
@@ -457,6 +467,8 @@ export default class Bridge extends Device
 						service = new ZigbeeConnectivityService(this); break;
 					case Resource.Type.ZGP_CONNECTIVITY:
 						service = new ZGPConnectivityService(this); break;
+					case Resource.Type.ZIGBEE_DEVICE_DISCOVERY:
+						service = this._deviceDiscoverer =  new ZigbeeDeviceDiscoveryService(this); break;
 					case Resource.Type.MOTION:
 						service = new MotionService(this); break;
 					case Resource.Type.DEVICE_POWER:
@@ -597,6 +609,12 @@ export default class Bridge extends Device
 	 */
 	getState()
 	{return (this._stream.getState())}
+
+	bridgeHome()
+	{return (this._bridgeHome)}
+
+	deviceDiscoverer()
+	{return (this._deviceDiscoverer)}
 
 	/**
 	 * Returns the bridge ID
