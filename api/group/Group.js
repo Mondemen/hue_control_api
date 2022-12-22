@@ -10,7 +10,11 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
 
 /**
  * @typedef {import("../../lib/Color.js").XYValue} XYValue
+ * @typedef {import("../../lib/Gradient.js").default} Gradient
  * @typedef {import("../service/LightService.js").default} LightService
+ * @typedef {import("../../lib/Timeslot.js").default} Timeslot
+ * @typedef {import("../../lib/time/TimeSecond.js").default} TimeSecond
+ * @typedef {import("../../lib/WeekTimeslot.js").default} WeekTimeslot
  * @typedef {import('../Device.js').default} Device
  * @typedef {import('../light/Light.js').default} Light
  * @typedef {import('../light/Bulb.js').default} Bulb
@@ -203,6 +207,11 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  * @param {number} i - Index position of color in array
  * @param {XYValue} color - The color in XY format
  *
+ * @callback SceneActionGradientModeEvent
+ * @param {Scene} scene - Updated scene
+ * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
+ * @param {Gradient.Mode[keyof typeof Gradient.Mode]} mode - The mode
+ *
  * @callback SceneActionDuration
  * @param {Scene} scene - Updated scene
  * @param {Light} light - Light attached to the action
@@ -215,6 +224,53 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  * @callback SceneSpeedEvent
  * @param {Scene} scene - Updated scene
  * @param {number} speed - The speed of dynamic
+ *
+ * @callback SceneCurrentTimeslotIDEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {number} timeslot_id - Current timeslot ID
+ *
+ * @callback SceneCurrentTimeslotEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {Timeslot} timeslot - Current timeslot
+ *
+ * @callback SceneCurrentWeekdayEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot.Weekday[keyof typeof WeekTimeslot.Weekday]} weekday - Current weekday
+ *
+ * @callback SceneCurrentWeekTimeslotEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weektimeslot - Current week timeslot
+ *
+ * @callback SceneStateEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {SmartScene.State} state - State
+ *
+ * @callback SceneWeekdaysEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {Set<WeekTimeslot.Weekday[keyof typeof WeekTimeslot.Weekday]>} weekdays - List of weekday
+ *
+ * @callback SceneTimeslotTimeEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {TimeSecond} time - Time
+ *
+ * @callback SceneTimeslotTimeHourEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {number} hour - Current hour
+ *
+ * @callback SceneTimeslotTimeMinuteEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {number} minute - Current minute
+ *
+ * @callback SceneTimeslotTimeSecondEvent
+ * @param {number} second - Current second
+ *
+ * @callback SceneTimeslotSceneEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {Scene} scene - Scene target
+ *
+ * @callback SceneStateEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {SmartScene.State} state - State
  *
  * @typedef EventCallbackTypes
  * @type {Object}
@@ -258,9 +314,21 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  * @property {SceneActionEffectEvent} scene_action_effect
  * @property {SceneActionGradientColorEvent} scene_action_gradient_color
  * @property {SceneActionGradientColorXYEvent} scene_action_gradient_color_xy
+ * @property {SceneActionGradientModeEvent} scene_action_gradient_mode
  * @property {SceneActionDuration} scene_action_duration
  * @property {SceneAutoDynamicEvent} scene_auto_dynamic
  * @property {SceneSpeedEvent} scene_speed
+ * @property {SceneCurrentTimeslotIDEvent} scene_current_timeslot_id
+ * @property {SceneCurrentTimeslotEvent} scene_current_timeslot
+ * @property {SceneCurrentWeekdayEvent} scene_current_weekday
+ * @property {SceneCurrentWeekTimeslotEvent} scene_current_week_timeslot
+ * @property {SceneTimeslotTimeHourEvent} scene_week_timeslot_time_hour
+ * @property {SceneTimeslotTimeMinuteEvent} scene_week_timeslot_time_minute
+ * @property {SceneTimeslotTimeSecondEvent} scene_week_timeslot_time_second
+ * @property {SceneTimeslotTimeEvent} scene_week_timeslot_time
+ * @property {SceneTimeslotSceneEvent} scene_week_timeslot_scene
+ * @property {SceneWeekdaysEvent} scene_week_weekdays
+ * @property {SceneStateEvent} scene_state
  * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
  */
 
