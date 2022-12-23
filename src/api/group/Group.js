@@ -6,12 +6,14 @@ import Scene from "../Scene.js";
 import GroupedLightService from "../service/GroupedLightService.js";
 import SmartScene from "../SmartScene.js";
 
-const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.length || 1);
-
 /**
  * @typedef {import("../../lib/Color.js").XYValue} XYValue
  * @typedef {import("../../lib/Gradient.js").default} Gradient
- * @typedef {import("../service/LightService.js").default} LightService
+ * @typedef {import("../../lib/LightData.js").State} LightState
+ * @typedef {import("../../lib/LightData.js").Effect} LightEffect
+ * @typedef {import("../../lib/LightData.js").DynamicStatus} LightDynamicStatus
+ * @typedef {import("../../lib/LightData.js").Mode} LightMode
+ * @typedef {import("../../lib/LightData.js").Effect} LightEffect
  * @typedef {import("../../lib/Timeslot.js").default} Timeslot
  * @typedef {import("../../lib/time/TimeSecond.js").default} TimeSecond
  * @typedef {import("../../lib/WeekTimeslot.js").default} WeekTimeslot
@@ -58,7 +60,7 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  *
  * @callback LightStateEvent
  * @param {Light} light - Updated light
- * @param {LightService.State[keyof typeof LightService.State]} state - The state of light
+ * @param {LightState} state - The state of light
  *
  * @callback LightBrightnessEvent
  * @param {Bulb} light - Updated light
@@ -82,7 +84,7 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  *
  * @callback LightEffectEvent
  * @param {Bulb} light - Updated light
- * @param {LightService.Effect[keyof typeof LightService.Effect]} effect - The effect of light
+ * @param {LightEffect} effect - The effect of light
  *
  * @callback LightDynamicSpeedEvent
  * @param {Bulb} light - Updated light
@@ -90,11 +92,11 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  *
  * @callback LightDynamicStatusEvent
  * @param {Bulb} light - Updated light
- * @param {LightService.DynamicStatus[keyof typeof LightService.DynamicStatus]} status - The dynamic scene status
+ * @param {LightDynamicStatus} status - The dynamic scene status
  *
  * @callback LightModeEvent
  * @param {Light} light - Updated light
- * @param {LightService.Mode[keyof typeof LightService.Mode]} mode - The mode of light
+ * @param {LightMode} mode - The mode of light
  *
  * @callback LightRawModeEvent
  * @param {Light} light - Updated light
@@ -163,7 +165,7 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  * @callback SceneActionStateEvent
  * @param {Scene} scene - Updated scene
  * @param {Light} light - Light attached to the action
- * @param {LightService.State[keyof typeof LightService.State]} state - The state of light
+ * @param {LightState} state - The state of light
  *
  * @callback SceneActionBrightnessEvent
  * @param {Scene} scene - Updated scene
@@ -193,7 +195,7 @@ const numberAverage = numbers => numbers.reduce((p, c) => p + c, 0) / (numbers.l
  * @callback SceneActionEffectEvent
  * @param {Scene} scene - Updated scene
  * @param {Bulb} light - Light attached to the action
- * @param {LightService.Effect[keyof typeof LightService.Effect]} effect - The effect of light
+ * @param {LightEffect} effect - The effect of light
  *
  * @callback SceneActionGradientColorEvent
  * @param {Scene} scene - Updated scene
