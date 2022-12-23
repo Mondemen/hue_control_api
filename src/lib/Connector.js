@@ -4,6 +4,7 @@ import Bridge from "../api/Bridge.js";
 import {hex_md5 as MD5} from "./MD5.js";
 import Request from "./Request.js";
 import MDNS from "./MDNS.js";
+import ExtError from "./error/ExtError.js";
 
 /**
  * @typedef {import('./Request.js').default} Request
@@ -61,9 +62,9 @@ export default class Connector extends EventEmitter
 		this._request = options?.request ?? Request;
 		this._mdns = options?.mdns ?? MDNS;
 		if (!this._request)
-			throw new Error("No requestor provided");
+			throw new ExtError("No requestor provided");
 		if (!this._mdns)
-			throw new Error("No mdns provided");
+			throw new ExtError("No mdns provided");
 		this._remoteClientKeys = removeClientKeys;
 	}
 
@@ -163,14 +164,14 @@ export default class Connector extends EventEmitter
 		let checkConfig;
 
 		if (!bridge?.ip)
-			throw new Error("Missing bridge IP");
+			throw new ExtError("Missing bridge IP");
 		if (!bridge?.id)
-			throw new Error("Missing bridge ID");
+			throw new ExtError("Missing bridge ID");
 		if (!appName)
-			throw new Error("Missing device ID");
+			throw new ExtError("Missing device ID");
 		checkConfig = (await new this._request(`https://${bridge.ip}/api/0/config`).setStrictSSL(false).execute()).data;
 		if (checkConfig?.bridgeid != bridge.id)
-			throw new Error("Targeted bridge does not have an ID corresponding to the one provided in parameter");
+			throw new ExtError("Targeted bridge does not have an ID corresponding to the one provided in parameter");
 		return (new Promise((resolve, reject) =>
 		{
 			let found = false, cancel = false;
@@ -199,7 +200,7 @@ export default class Connector extends EventEmitter
 				if (!found)
 				{
 					cancel = true;
-					reject(new Error("Link button not pressed"));
+					reject(new ExtError("Link button not pressed"));
 				}
 			}, timeout * 1000);
 		}))
@@ -291,7 +292,7 @@ export default class Connector extends EventEmitter
 		if (!authData)
 		{
 			if (!this._authCallback)
-				throw new Error("Missing the authorization callback, use registerAuthorizationCallback()");
+				throw new ExtError("Missing the authorization callback, use registerAuthorizationCallback()");
 			authData = await this._authCallback(
 			{
 				authorizationEndpoint: `${baseURL}${authorizePath}`,
@@ -299,7 +300,7 @@ export default class Connector extends EventEmitter
 			}, this._remoteClientKeys.clientID, state);
 		}
 		if (!authData?.code)
-			throw new Error("Missing the authorization code obtained from the remote portal");
+			throw new ExtError("Missing the authorization code obtained from the remote portal");
 
 		// Get NONCE
 		req = new this._request(`${baseURL}${tokenPath}`).post();
@@ -310,13 +311,13 @@ export default class Connector extends EventEmitter
 			req.setParam("code_verifier", authData.codeVerifier);
 		beforeTokenData = await req.execute();
 		if (!beforeTokenData?.headers?.["www-authenticate"])
-			throw new Error("Missing realm and nonce code in response");
+			throw new ExtError("Missing realm and nonce code in response");
 		realm = /realm="(.*?)"/.exec(beforeTokenData.headers["www-authenticate"])[1];
 		nonce = /nonce="(.*?)"/.exec(beforeTokenData.headers["www-authenticate"])[1];
 		if (!realm)
-			throw new Error("Missing realm in response");
+			throw new ExtError("Missing realm in response");
 		if (!nonce)
-			throw new Error("Missing nonce in response");
+			throw new ExtError("Missing nonce in response");
 
 		// Get Token
 		hash1 = MD5(`${this._remoteClientKeys.clientID}:${realm}:${this._remoteClientKeys.clientSecret}`);
@@ -338,10 +339,10 @@ export default class Connector extends EventEmitter
 		req.setHeader("Authorization", `Bearer ${tokenData.data.access_token}`);
 		bridgeData = await req.execute();
 		if (bridgeData.statusCode != 200)
-			throw {code: ErrorCodes.badAppKey};
+			throw new ExtError(ErrorCodes.badAppKey);
 		bridgeData = bridgeData.data?.data?.[0];
 		if (bridgeData.bridge_id?.toUpperCase() != bridgeID)
-			throw {code: ErrorCodes.badBridgeID};
+			throw new ExtError(ErrorCodes.badBridgeID);
 		return ({
 			access_token: tokenData.data.access_token,
 			refresh_token: tokenData.data.refresh_token,
@@ -363,13 +364,13 @@ export default class Connector extends EventEmitter
 		req.setParam("grant_type", "authorization_code");
 		beforeTokenData = await req.execute();
 		if (!beforeTokenData?.headers?.["www-authenticate"])
-			throw new Error("Missing realm and nonce code in response");
+			throw new ExtError("Missing realm and nonce code in response");
 		realm = /realm="(.*?)"/.exec(beforeTokenData.headers["www-authenticate"])[1];
 		nonce = /nonce="(.*?)"/.exec(beforeTokenData.headers["www-authenticate"])[1];
 		if (!realm)
-			throw new Error("Missing realm in response");
+			throw new ExtError("Missing realm in response");
 		if (!nonce)
-			throw new Error("Missing nonce in response");
+			throw new ExtError("Missing nonce in response");
 
 		// Get Refresh Token
 		hash1 = MD5(`${this._remoteClientKeys.clientID}:${realm}:${this._remoteClientKeys.clientSecret}`);

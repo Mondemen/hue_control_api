@@ -1,6 +1,7 @@
 import Resource from "../../api/Resource.js";
 import {checkParam} from "../../utils/index.js";
 import ErrorCodes from "../error/ErrorCodes.js";
+import ExtError from "../error/ExtError.js";
 
 /**
  * @callback HourEvent
@@ -70,7 +71,7 @@ export default class Time
 	{
 		checkParam(this, "setHour", "hour", hour, "number");
 		if (hour < 0 || hour > 23)
-			throw {code: ErrorCodes.badHourRange, message: "The hour must be between 0 and 23"};
+			throw new ExtError(ErrorCodes.badHourRange);
 		if (this._resource.isExists())
 		{
 			this._update.hour = hour;

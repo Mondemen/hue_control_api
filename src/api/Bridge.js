@@ -1,9 +1,10 @@
 import MotionSensor from "./accessory/MotionSensor.js";
 import Switch from "./accessory/Switch.js";
 import Device from "./Device.js";
-import ColorBulb from "./light/ColorBulb.js";
 import Light from "./light/Light.js";
+import Bulb from "./light/Bulb.js";
 import Plug from "./light/Plug.js";
+import ColorBulb from "./light/ColorBulb.js";
 import WhiteAmbianceBulb from "./light/WhiteAmbianceBulb.js";
 import WhiteAndColorBulb from "./light/WhiteAndColorBulb.js";
 import WhiteBulb from "./light/WhiteBulb.js";
@@ -26,6 +27,7 @@ import Zone from "./group/Zone.js";
 import BridgeHome from "./group/BridgeHome.js";
 import Scene from "./Scene.js";
 import SmartScene from "./SmartScene.js";
+import ExtError from "../lib/error/ExtError.js";
 
 // import util from "util";
 // import {createRequire} from 'module';
@@ -76,9 +78,10 @@ export default class Bridge extends Device
 			MotionSensor,
 			Switch,
 			Device,
-			ColorBulb,
 			Light,
+			Bulb,
 			Plug,
+			ColorBulb,
 			WhiteAmbianceBulb,
 			WhiteAndColorBulb,
 			WhiteBulb,
@@ -160,11 +163,11 @@ export default class Bridge extends Device
 	{
 		super();
 		if (!baseURL)
-			throw new Error("No base URL defined");
+			throw new ExtError("No base URL defined");
 		if (!appKey)
-			throw new Error("No application key defined");
+			throw new ExtError("No application key defined");
 		if (!connector)
-			throw new Error("No connector has been defined");
+			throw new ExtError("No connector has been defined");
 		this._baseURL = baseURL;
 		this._appKey = appKey;
 		this._remoteAccess = remoteAccess;

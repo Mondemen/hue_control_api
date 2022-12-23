@@ -163,8 +163,8 @@ Below thte list of features currently supported by this library
 | Bridge discovery         | :heavy_check_mark: | :heavy_check_mark: |
 | Device discovery         | :heavy_check_mark: | :heavy_check_mark: |
 | Connect with link button | :heavy_check_mark: | :x:                |
-| Search new light         | :x:                | :x:                |
-| Search new accessory     | :x:                | :x:                |
+| Search new light         | :heavy_check_mark: | :heavy_check_mark: |
+| Search new accessory     | :heavy_check_mark: | :heavy_check_mark: |
 | Event stream             | :heavy_check_mark: | :x:                |
 
 ## Global Device (light, accessory)
@@ -307,6 +307,24 @@ No additional support currently
 | Set palette color temp         | :heavy_check_mark: | :heavy_check_mark: |
 | Get palette speed              | :heavy_check_mark: | :heavy_check_mark: |
 | Set palette speed              | :heavy_check_mark: | :heavy_check_mark: |
+| Delete                         | :heavy_check_mark: | :heavy_check_mark: |
+
+## Smart Scene
+
+|  Feature                       | Local              | Remote             |
+|--------------------------------|--------------------|--------------------|
+| Get name                       | :heavy_check_mark: | :heavy_check_mark: |
+| Set name                       | :heavy_check_mark: | :heavy_check_mark: |
+| Get image                      | :heavy_check_mark: | :heavy_check_mark: |
+| Set image (on creation)        | :heavy_check_mark: | :heavy_check_mark: |
+| Get week timeslots             | :heavy_check_mark: | :heavy_check_mark: |
+| Add week timeslot              | :heavy_check_mark: | :heavy_check_mark: |
+| Get week timeslot recurrence   | :heavy_check_mark: | :heavy_check_mark: |
+| Set week timeslot recurrence   | :heavy_check_mark: | :heavy_check_mark: |
+| Get timeslot                   | :heavy_check_mark: | :heavy_check_mark: |
+| Set timeslot                   | :heavy_check_mark: | :heavy_check_mark: |
+| Get state                      | :heavy_check_mark: | :heavy_check_mark: |
+| Set state                      | :heavy_check_mark: | :heavy_check_mark: |
 | Delete                         | :heavy_check_mark: | :heavy_check_mark: |
 
 ## Automation

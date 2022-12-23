@@ -22,8 +22,6 @@ export default class Switch extends Accessory
 	getButton(id)
 	{
 		checkParam(this, "getButton", "id", id, Number);
-		if (!this._button[id])
-			throw new RangeError(`Unknown button ID '${id}'`);
 		return (this._button[id]);
 	}
 }

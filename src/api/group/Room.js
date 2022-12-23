@@ -1,3 +1,4 @@
+import ExtError from "../../lib/error/ExtError.js";
 import { checkParam } from "../../utils/index.js";
 import Device from "../Device.js";
 import Resource from "../Resource.js";
@@ -43,7 +44,7 @@ export default class Room extends Group
 	{
 		checkParam(this, "addDevice", "device", device, Device);
 		if (device?.getRoom?.()?.getName?.())
-			throw new Error(`The device '${device.getName()}' is already in a room`);
+			throw new ExtError(`The device '${device.getName()}' is already in a room`);
 		return (super.addDevice(device));
 	}
 }

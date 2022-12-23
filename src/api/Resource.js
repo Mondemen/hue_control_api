@@ -1,5 +1,6 @@
 // import util from "util";
 import ErrorCodes from "../lib/error/ErrorCodes.js";
+import ExtError from "../lib/error/ExtError.js";
 import EventEmitter from "../lib/EventEmitter.js";
 
 /**
@@ -275,7 +276,7 @@ export default class Resource extends EventEmitter
 		if (messages.length)
 			console.warn(messages);
 		if (Object.values(ErrorCodes.http).includes(response?.statusCode))
-			throw {code: response.statusCode, message: messages};
+			throw new ExtError(response.statusCode, "HTTP error", messages);
 	}
 
 	async create()
@@ -285,7 +286,7 @@ export default class Resource extends EventEmitter
 		let data;
 
 		if (!this._bridge)
-			throw new Error("No brigde provided");
+			throw new ExtError("No brigde provided");
 		baseURL = this._bridge._baseURL;
 		if (Object.keys(this._create).length)
 		{
@@ -318,7 +319,7 @@ export default class Resource extends EventEmitter
 		if (data)
 			this._setData(data);
 		else
-			throw {code: ErrorCodes.notCreated, message: "Resource not create due to error"}
+			throw new ExtError(ErrorCodes.notCreated);
 		return (data);
 	}
 
@@ -329,7 +330,7 @@ export default class Resource extends EventEmitter
 		let baseURL;
 
 		if (!this._bridge)
-			throw new Error("No brigde provided");
+			throw new ExtError("No brigde provided");
 		baseURL = this._bridge._baseURL;
 		if (this._bridge._remoteAccess)
 			baseURL += "/route";
@@ -353,7 +354,7 @@ export default class Resource extends EventEmitter
 		let baseURL, url;
 
 		if (!this._bridge)
-			throw new Error("No brigde provided");
+			throw new ExtError("No brigde provided");
 		promises.push(...Object.values(this._updatedService).map(service => service.update()));
 		baseURL = this._bridge._baseURL;
 		if (Object.keys(this._update).length)

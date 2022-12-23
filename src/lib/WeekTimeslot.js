@@ -2,6 +2,7 @@ import Scene from "../api/Scene.js";
 import SmartScene from "../api/SmartScene.js";
 import {checkParam} from "../utils/index.js";
 import ErrorCodes from "./error/ErrorCodes.js";
+import ExtError from "./error/ExtError.js";
 import Timeslot from "./Timeslot.js";
 
 /**
@@ -127,7 +128,7 @@ export default class WeekTimeslot
 	{
 		checkParam(this, "addWeekday", "weekday", weekday, "string");
 		if (this._smartScene.getWeekTimeslots().find(weekTimeslot => weekTimeslot !== this && weekTimeslot._recurrence.has(weekday)))
-			throw {code: ErrorCodes.alreadyExists, message: `This weekday (${weekday}) is already defined in another week timeslot`};
+			throw new ExtError(ErrorCodes.alreadyExists, `This weekday (${weekday}) is already defined in another week timeslot`);
 		this._recurrence.add(weekday);
 		if (this._smartScene.isExists())
 		{

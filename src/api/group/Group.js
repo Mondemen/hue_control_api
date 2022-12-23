@@ -1,5 +1,5 @@
 import ErrorCodes from "../../lib/error/ErrorCodes.js";
-import MinimalLengthError from "../../lib/error/MinimalLengthError.js";
+import ExtError from "../../lib/error/ExtError.js";
 import Light from "../light/Light.js";
 import Resource from "../Resource.js";
 import Scene from "../Scene.js";
@@ -340,10 +340,10 @@ export default class Group extends Resource
 	static AlertType = GroupedLightService.AlertType;
 
 	/**
-	 * @type {Object<string,Device>}
+	 * @type {Map<string,Device>}
 	 * @private
 	 */
-	_devices = {};
+	_devices = new Map();
 	/**
 	 * @type {GroupedLightService}
 	 * @private
@@ -370,7 +370,7 @@ export default class Group extends Resource
 		return (
 		{
 			...super[Symbol.for('nodejs.util.inspect.custom')](),
-			lights: Object.values(this._devices),
+			lights: [...this._devices.values()],
 		})
 	}
 
@@ -392,12 +392,12 @@ export default class Group extends Resource
 			if (service instanceof Resource)
 				this._addService(service);
 		});
-		this._data.minBrightness = +Object.values(this._devices).filter(device => device instanceof this.getBridge().Object.Light).reduce((result, light) =>
+		this._data.minBrightness = this._devices.size ? Infinity : 0;
+		this._devices.forEach(bulb =>
 		{
-			if (light.getCapabilities().has("dimming"))
-				result = Math.min(result, light.getMinBrightness());
-			return (result);
-		}, (Object.keys(this._devices).length) ? Infinity : 0).toFixed(2);
+			if (bulb instanceof this.getBridge().Object.Bulb)
+				this._data.minBrightness = Math.min(this._data.minBrightness, bulb.getMinBrightness());
+		})
 	}
 
 	/**
@@ -428,7 +428,7 @@ export default class Group extends Resource
 			name: this._data.name,
 			archetype: this._data.archetype,
 			...this._groupedLight?._getFullData(),
-			lights: Object.keys(this._devices)
+			lights: [...this._devices.keys()]
 		})
 	}
 
@@ -478,7 +478,7 @@ export default class Group extends Resource
 	_addDevice(device)
 	{
 		if (device instanceof this.getBridge().Object.Device)
-			this._devices[device.getID()] = device;
+			this._devices.set(device.getID(), device);
 	}
 
 	/**
@@ -488,7 +488,7 @@ export default class Group extends Resource
 	 * @protected
 	 */
 	_deleteDevice(device)
-	{delete this._devices[device?.getID?.() ?? device]}
+	{this._devices.delete(device?.getID?.() ?? device)}
 
 	createScene()
 	{
@@ -504,7 +504,7 @@ export default class Group extends Resource
 		let scene;
 
 		if (this.getScenes().find(scene => scene instanceof SmartScene))
-			throw {code: ErrorCodes.alreadyExists, message: ["The group already have smart scene"]};
+			throw new ExtError(ErrorCodes.alreadyExists, "This group already have smart scene");
 		scene = new SmartScene(this._bridge);
 		scene._exists = false;
 		scene._setGroup(this);
@@ -552,7 +552,7 @@ export default class Group extends Resource
 	addDevice(device)
 	{
 		this._update ??= {};
-		this._update.children ??= Object.values(this._devices).map(device => ({rtype: device.getType(), rid: device.getID()}));
+		this._update.children ??= [...this._devices.values()].map(device => ({rtype: device.getType(), rid: device.getID()}));
 		this._update.children.push({rtype: device.getType(), rid: device.getID()});
 		if (this._prepareUpdate)
 			return (this);
@@ -570,11 +570,9 @@ export default class Group extends Resource
 		let index;
 
 		this._update ??= {};
-		this._update.children ??= Object.values(this._devices).map(device => ({rtype: device.getType(), rid: device.getID()}));
-		if (this._update[""].children.length <= 1)
-			throw new MinimalLengthError(this, "removeDevice", this.getType(), "device", 1);
-		if ((index = this._update[""].children.findIndex(child => child.rid == device.getID())) >= 0)
-			this._update[""].children.splice(index, 1);
+		this._update.children ??= [...this._devices.values()].map(device => ({rtype: device.getType(), rid: device.getID()}));
+		if ((index = this._update.children.findIndex(child => child.rid == device.getID())) >= 0)
+			this._update.children.splice(index, 1);
 		if (this._prepareUpdate)
 			return (this);
 		return (this.update());
@@ -587,7 +585,7 @@ export default class Group extends Resource
 	 * @returns {Device} The device
 	 */
 	getDevice(id)
-	{return (this._devices[id])}
+	{return (this._devices.get(id))}
 
 	/**
 	 * Gets the list of device in this group
@@ -595,7 +593,7 @@ export default class Group extends Resource
 	 * @returns {Device[]} The list of device
 	 */
 	getDevices()
-	{return (Object.values(this._devices))}
+	{return ([...this._devices.values()])}
 
 	getState()
 	{return (this._groupedLight?.getState?.() ?? Group.State.OFF)}

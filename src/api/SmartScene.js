@@ -3,6 +3,7 @@ import {checkParam} from "../utils/index.js";
 import ErrorCodes from "../lib/error/ErrorCodes.js";
 import WeekTimeslot from "../lib/WeekTimeslot.js";
 import util from "util";
+import ExtError from "../lib/error/ExtError.js";
 
 /**
  * @typedef {import('./group/Group.js').default} Group
@@ -236,9 +237,9 @@ export default class SmartScene extends Resource
 	{
 		checkParam(this, "setImage", "image", image, "string");
 		if (!/^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(image))
-			throw {code: ErrorCodes.badUUID, message: "Image ID does not match with accepted pattern (uuid v4)"};
+			throw new ExtError(ErrorCodes.badUUID, "Image ID does not match with accepted pattern (uuid v4)");
 		if (this.isExists())
-			throw {code: ErrorCodes.alreadyExists, message: "Image can be define only during the creation of the scene"};
+			throw new ExtError(ErrorCodes.alreadyExists, "Image can be define only during the creation of the scene");
 		this._create.metadata ??= {};
 		this._create.metadata.image ??= {};
 		this._create.metadata.image.rid = image;

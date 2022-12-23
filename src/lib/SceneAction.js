@@ -4,6 +4,7 @@ import Mired from "./Mired.js";
 import LightData from "./LightData.js";
 import {checkParam} from "../utils/index.js";
 import Gradient from "./Gradient.js";
+import ExtError from "./error/ExtError.js";
 
 /**
  * @typedef {import('../api/service/LightService.js').default} LightService
@@ -197,7 +198,7 @@ export default class SceneAction
 	{
 		checkParam(this, "setBrightness", "brightness", brightness, "number");
 		if (!this._light.getCapabilities().has(LightData.Capabilities.DIMMING))
-			throw new Error(`The light '${this._light.getID()}' (${this._light.getName()}) don't have the capability to set the brighness`);
+			throw new ExtError(`The light '${this._light.getID()}' (${this._light.getName()}) don't have the capability to set the brighness`);
 		if (this._scene.isExists())
 		{
 			LightData.setBrightness(this._update, brightness);
@@ -233,7 +234,7 @@ export default class SceneAction
 	{
 		checkParam(this, "setColor", "color", color, [Color, "string", "object"]);
 		if (!this._light.getCapabilities().has(LightData.Capabilities.COLOR))
-			throw new Error(`The light '${this._light.getID()}' (${this._light.getName()}) don't have the capability to set the color`);
+			throw new ExtError(`The light '${this._light.getID()}' (${this._light.getName()}) don't have the capability to set the color`);
 		if (this._scene.isExists())
 		{
 			LightData.setColor(this._update, color, this._light._light.getColorGamut());

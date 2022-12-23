@@ -1,6 +1,7 @@
 import Resource from "../api/Resource.js";
 import { checkParam } from "../utils/index.js";
 import Color from "./Color.js";
+import ExtError from "./error/ExtError.js";
 import LightData from "./LightData.js";
 
 /**
@@ -122,7 +123,7 @@ export default class Gradient
 		let data = {};
 
 		if (index < 0 || index > 4)
-			throw new Error(`The index must have between 0 and 4`);
+			throw new ExtError(`The index must have between 0 and 4`);
 		checkParam(this, "setColor", "color", color, [Color, "string", "object"]);
 		if (this._parent.isExists())
 		{
@@ -158,7 +159,7 @@ export default class Gradient
 		let data = {};
 
 		if (this._data.length >= 5)
-			throw new Error(`The maximum number of point in gradient is 5`);
+			throw new ExtError(`The maximum number of point in gradient is 5`);
 		checkParam(this, "addColor", "color", color, [Color, "string", "object"]);
 		LightData.setColor(data, color);
 		if (this._parent.isExists())
@@ -226,7 +227,7 @@ export default class Gradient
 	removeColor(index)
 	{
 		if (index < 0 || index > 4)
-			throw new Error(`The index must have between 0 and 4`);
+			throw new ExtError(`The index must have between 0 and 4`);
 		if (this._parent.isExists())
 		{
 			this._update.points ??= [];

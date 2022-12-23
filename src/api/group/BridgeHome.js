@@ -3,6 +3,7 @@ import Group from "./Group.js";
 import LightService from "../service/LightService.js";
 import Accessory from "../accessory/Accessory.js";
 import Resource from "../Resource.js";
+import ExtError from "../../lib/error/ExtError.js";
 
 export default class BridgeHome extends Group
 {
@@ -44,11 +45,11 @@ export default class BridgeHome extends Group
 
 	addLight(light)
 	{
-		throw new Error(`${this.constructor.name}.addLight(): The ${this.constructor.name} cannot contain any other light`)
+		throw new ExtError("BridgeHome cannot add new light");
 	}
 
 	removeLight(light)
 	{
-		throw new Error(`${this.constructor.name}.removeLight(): The ${this.constructor.name} cannot remove a light `)
+		throw new ExtError("BridgeHome cannot remove light");
 	}
 }

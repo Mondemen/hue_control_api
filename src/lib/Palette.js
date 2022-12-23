@@ -1,5 +1,6 @@
 import { checkParam } from "../utils/index.js";
 import Color from "./Color.js";
+import ExtError from "./error/ExtError.js";
 import LightData from "./LightData.js";
 import Mired from "./Mired.js";
 
@@ -212,7 +213,7 @@ export default class Palette
 	setColor(index, color, brightness)
 	{
 		if (index < 0 || index > 8)
-			throw new Error(`The index must have between 0 and 8`);
+			throw new ExtError(`The index must have between 0 and 8`);
 		checkParam(this, "setColor", "color", color, [Color, "string", "object"]);
 		checkParam(this, "setColor", "brightness", brightness, "number");
 		if (this._scene.isExists())
@@ -246,7 +247,7 @@ export default class Palette
 		let data = {};
 
 		if (this._data.palette?.color?.length >= 9)
-			throw new Error(`The maximum number of color in palette is 9`);
+			throw new ExtError(`The maximum number of color in palette is 9`);
 		checkParam(this, "addColor", "color", color, [Color, "string", "object"]);
 		checkParam(this, "addColor", "brightness", brightness, "number");
 		if (this._scene.isExists())
@@ -294,7 +295,7 @@ export default class Palette
 	removeColor(index)
 	{
 		if (index < 0 || index > 8)
-			throw new Error(`The index must have between 0 and 8`);
+			throw new ExtError(`The index must have between 0 and 8`);
 		if (this._scene.isExists())
 		{
 			this._copyToUpdate();

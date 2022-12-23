@@ -1,5 +1,6 @@
 import {checkParam} from "../../utils/index.js";
 import ErrorCodes from "../error/ErrorCodes.js";
+import ExtError from "../error/ExtError.js";
 import Time from "./Time.js";
 
 /**
@@ -40,7 +41,7 @@ export default class TimeMinute extends Time
 	{
 		checkParam(this, "setMinute", "minute", minute, "number");
 		if (minute < 0 || minute > 59)
-			throw {code: ErrorCodes.badMinuteRange, message: "The minute must be between 0 and 59"};
+			throw new ExtError(ErrorCodes.badMinuteRange);
 		if (this._resource.isExists())
 		{
 			this._update.minute = minute;
