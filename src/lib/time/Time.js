@@ -37,7 +37,7 @@ export default class Time
 	}
 
 	[Symbol.for('nodejs.util.inspect.custom')]()
-	{return (this._data)}
+	{return ({...this._data, timeInSecond: this.getInSecond()})}
 
 	/**
 	 * @private
@@ -63,6 +63,22 @@ export default class Time
 	 */
 	emit(eventName, ...args)
 	{this._parent.emit(`time_${eventName}`, ...args)}
+
+	getInSecond()
+	{return (this._data.hour * 60 * 60)}
+
+	get()
+	{return (this._getData())}
+
+	/**
+	 * @param {object} data
+	 * @param {number} data.hour - Hour
+	 */
+	set(data)
+	{
+		this._data.hour = data.hour ?? this._data.hour;
+		return (this);
+	}
 
 	getHour()
 	{return (this._update.hour ?? this._data.hour)}

@@ -34,6 +34,28 @@ export default class TimeSecond extends TimeMinute
 		})
 	}
 
+	/**
+	 * @returns {number}
+	 */
+	getInSecond()
+	{return (super.getInSecond() + this._data.second)}
+
+	get()
+	{return (this._getData())}
+
+	/**
+	 * @param {object} data
+	 * @param {number} data.hour - Hour
+	 * @param {number} data.minute - Minute
+	 * @param {number} data.second - Second
+	 */
+	set(data)
+	{
+		super.set(data);
+		this._data.second = data.second ?? this._data.second;
+		return (this);
+	}
+
 	getSecond()
 	{return (this._update.second ?? this._data.second)}
 
