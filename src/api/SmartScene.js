@@ -4,6 +4,7 @@ import ErrorCodes from "../lib/error/ErrorCodes.js";
 import WeekTimeslot from "../lib/WeekTimeslot.js";
 import util from "util";
 import ExtError from "../lib/error/ExtError.js";
+import {TimeSecond} from "../index.js";
 
 /**
  * @typedef {import('./group/Group.js').default} Group
@@ -40,8 +41,12 @@ import ExtError from "../lib/error/ExtError.js";
  * @property {import("../lib/time/Time.js").HourEvent} week_timeslot_time_hour
  * @property {import("../lib/time/TimeMinute.js").MinuteEvent} week_timeslot_time_minute
  * @property {import("../lib/time/TimeSecond.js").SecondEvent} week_timeslot_time_second
+ * @property {import("../lib/Timeslot.js").AddEvent} week_timeslot_add
+ * @property {import("../lib/Timeslot.js").DeleteEvent} week_timeslot_delete
  * @property {import("../lib/Timeslot.js").TimeEvent} week_timeslot_time
  * @property {import("../lib/Timeslot.js").SceneEvent} week_timeslot_scene
+ * @property {import("../lib/WeekTimeslot.js").AddEvent} week_add
+ * @property {import("../lib/WeekTimeslot.js").DeleteEvent} week_delete
  * @property {import("../lib/WeekTimeslot.js").WeekdaysEvent} week_weekdays
  * @property {State} state
  * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback
@@ -120,15 +125,22 @@ export default class SmartScene extends Resource
 		if (data?.metadata?.name != undefined && this._data.name != data?.metadata?.name)
 			this.emit("name", this._data.name = data?.metadata?.name);
 		this._data.image = data?.metadata?.image?.rid ?? this._data.image;
+		this._weekTimeslots.forEach(weekTimeslot => weekTimeslot._alive = false);
 		data?.week_timeslots?.forEach((weekTimeslotData, index) =>
 		{
-			weekTimeslot = this._weekTimeslots[index] ?? new WeekTimeslot(this, index);
+			if (!this._weekTimeslots[index])
+				weekTimeslot = new WeekTimeslot(this, index);
+			else
+			{
+				weekTimeslot = this._weekTimeslots[index];
+				weekTimeslot._index = index;
+			}
 			weekTimeslot._setData(weekTimeslotData);
 			this._weekTimeslots.push(weekTimeslot);
 		})
+		this._weekTimeslots = this._weekTimeslots.filter(weekTimeslot => (!weekTimeslot._alive) ? weekTimeslot._delete() : true);
 		if (data?.active_timeslot?.timeslot_id != undefined && data.active_timeslot.timeslot_id != this._data.currentTimeslot)
 		{
-
 			this.emit("current_timeslot_id", this._data.currentTimeslot = data.active_timeslot.timeslot_id);
 			this.emit("current_timeslot", this.getCurrentTimeslot());
 		}
@@ -199,6 +211,11 @@ export default class SmartScene extends Resource
 	once(eventName, listener)
 	{return (super.once(eventName, listener))}
 
+	/**
+	 * Get smart scene name
+	 *
+	 * @returns {string}
+	 */
 	getName()
 	{
 		if (this.isExists())
@@ -207,7 +224,7 @@ export default class SmartScene extends Resource
 	}
 
 	/**
-	 * Set scene name
+	 * Set smart scene name
 	 *
 	 * @param {string} name - The name
 	 * @returns {Scene|Promise} Return this object if prepareUpdate() was called, otherwise returns Promise
@@ -224,11 +241,16 @@ export default class SmartScene extends Resource
 		return (this);
 	}
 
+	/**
+	 * Get smart scene image
+	 *
+	 * @returns {string}
+	 */
 	getImage()
 	{return (this._data.image)}
 
 	/**
-	 * Set scene image
+	 * Set smart scene image
 	 *
 	 * @param {Scene.Image[keyof typeof Scene.Image]} image - The image
 	 * @returns {Scene} Return this object
@@ -282,6 +304,14 @@ export default class SmartScene extends Resource
 	getCurrentTimeslot()
 	{return (this.getCurrentWeekTimeslot()?.getTimeslots()?.[this._data.currentTimeslot])}
 
+	getTimeslotFromDate(weekday, date)
+	{return (this.getWeekTimeslotFromWeekday(weekday).getTimeslotFromDate(date))}
+
+	/**
+	 * Get current state of smart scene
+	 *
+	 * @returns {SmartScene.State[keyof typeof SmartScene.State]}
+	 */
 	getState()
 	{
 		if (this._update.recall?.action)
@@ -341,7 +371,6 @@ export default class SmartScene extends Resource
 	{
 		if (this._weekTimeslots.find(timeslot => timeslot._updated))
 			this._update.week_timeslots = this._weekTimeslots.map(weekTimeslot => weekTimeslot._getData());
-		console.log("UPDATE", util.inspect(this._update, false, null, true));
 		await super.update();
 	}
 
@@ -350,11 +379,10 @@ export default class SmartScene extends Resource
 		let isExists = this.isExists();
 		let error;
 
+		this.prepareUpdate();
+		this.setState(SmartScene.State.ACTIVE);
 		if (!isExists)
-		{
-			this.setState(SmartScene.State.ACTIVE);
 			await this.create();
-		}
 		else
 		{
 			try
@@ -375,11 +403,10 @@ export default class SmartScene extends Resource
 		let isExists = this.isExists();
 		let error;
 
+		this.prepareUpdate();
+		this.setState(SmartScene.State.INACTIVE);
 		if (!isExists)
-		{
-			this.setState(SmartScene.State.INACTIVE);
 			await this.create();
-		}
 		else
 		{
 			try

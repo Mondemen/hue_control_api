@@ -1,12 +1,19 @@
-import Scene from "../api/Scene.js";
 import SmartScene from "../api/SmartScene.js";
+import {TimeSecond} from "../index.js";
 import {checkParam} from "../utils/index.js";
 import ErrorCodes from "./error/ErrorCodes.js";
 import ExtError from "./error/ExtError.js";
 import Timeslot from "./Timeslot.js";
 
 /**
+ * @callback AddEvent
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ *
+ * @callback DeleteEvent
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ *
  * @callback WeekdaysEvent
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
  * @param {Set<WeekTimeslot.Weekday[keyof typeof WeekTimeslot.Weekday]>} weekdays - List of weekday
  */
 
@@ -30,6 +37,16 @@ export default class WeekTimeslot
 	}
 
 	/**
+	 * @type {boolean}
+	 * @private
+	 */
+	_alive = true;
+	/**
+	 * @type {boolean}
+	 * @private
+	 */
+	_init = false;
+	/**
 	 * @type {SmartScene}
 	 * @private
 	 */
@@ -49,6 +66,11 @@ export default class WeekTimeslot
 	 * @private
 	 */
 	_recurrence = new Set();
+	/**
+	 * @type {boolean}
+	 * @private
+	 */
+	_updated = false;
 
 	constructor(smartScene, index)
 	{
@@ -72,17 +94,28 @@ export default class WeekTimeslot
 	{
 		let timeslot;
 
+		this._alive = true;
+		this._timeslots.forEach(timeslot => timeslot._alive = false);
 		data?.timeslots?.forEach((timeslotData, index) =>
 		{
-			timeslot = this._timeslots[index] ?? new Timeslot(this._smartScene, this, index);
+			if (!this._timeslots[index])
+				timeslot = new Timeslot(this._smartScene, this, index);
+			else
+			{
+				timeslot = this._timeslots[index];
+				timeslot._index = index;
+			}
 			timeslot._setData(timeslotData);
 			this._timeslots.push(timeslot);
 		})
+		this._timeslots = this._timeslots.filter(timeslot => (!timeslot._alive) ? timeslot._delete() : true);
 		if (data?.recurrence && data.recurrence?.length != this.recurrence?.size)
 		{
 			data?.recurrence.forEach(weekday => this._recurrence.add(weekday));
 			this.emit("weekdays", this._recurrence);
 		}
+		if (!this._init)
+			this._add();
 	}
 
 	/**
@@ -99,14 +132,43 @@ export default class WeekTimeslot
 	/**
 	 * @private
 	 */
+	_add()
+	{
+		this.emit("add");
+		this._init = true;
+	}
+
+	/**
+	 * @private
+	 */
+	_delete()
+	{this.emit("delete")}
+
+	/**
+	 * @private
+	 */
 	emit(eventName, ...args)
 	{this._smartScene.emit(`week_${eventName}`, this, ...args)}
 
 	getIndex()
 	{return (this._index)}
 
+	getSmartScene()
+	{return (this._smartScene)}
+
 	getTimeslots()
 	{return (this._timeslots)}
+
+	getTimeslotFromDate(date)
+	{
+		let timeslots, timeslot;
+		let timeSecond = new TimeSecond().set(date).getInSecond();
+
+		timeslots = this._timeslots.sort((ts1, ts2) => ts1.getTime().getInSecond() - ts2.getTime().getInSecond());
+		timeslot = [...timeslots].reverse().find(timeslot => timeslot.getTime().getInSecond() <= timeSecond);
+		timeslot ??= timeslots[timeslots.length - 1];
+		return (timeslot);
+	}
 
 	addTimeslot()
 	{

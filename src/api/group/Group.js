@@ -152,6 +152,12 @@ import SmartScene from "../SmartScene.js";
  * |   Scene events   |
  * |******************|
  *
+ * @callback AddSceneEvent
+ * @param {Scene} scene - Updated scene
+ *
+ * @callback DeleteSceneEvent
+ * @param {Scene} scene - Updated scene
+ *
  * @callback SceneNameEvent
  * @param {Scene} scene - Updated scene
  * @param {string} name - Name of device
@@ -161,6 +167,14 @@ import SmartScene from "../SmartScene.js";
  *
  * @callback SceneEventEnd
  * @param {Scene} scene - Updated scene
+ *
+ * @callback SceneActionAddEvent
+ * @param {Scene} scene - Updated scene
+ * @param {Light} light - Light attached to the action
+ *
+ * @callback SceneActionDeleteEvent
+ * @param {Scene} scene - Updated scene
+ * @param {Light} light - Light attached to the action
  *
  * @callback SceneActionStateEvent
  * @param {Scene} scene - Updated scene
@@ -247,27 +261,57 @@ import SmartScene from "../SmartScene.js";
  * @param {SmartScene} scene - Updated scene
  * @param {SmartScene.State} state - State
  *
+ * @callback SceneWeekTimeslotAddEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ *
+ * @callback SceneWeekTimeslotDeleteEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ *
  * @callback SceneWeekdaysEvent
  * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
  * @param {Set<WeekTimeslot.Weekday[keyof typeof WeekTimeslot.Weekday]>} weekdays - List of weekday
+ *
+ * @callback SceneTimeslotAddEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ * @param {Timeslot} timeslot - Timeslot
+ *
+ * @callback SceneTimeslotDeleteEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ * @param {Timeslot} timeslot - Timeslot
  *
  * @callback SceneTimeslotTimeEvent
  * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ * @param {Timeslot} timeslot - Timeslot
  * @param {TimeSecond} time - Time
  *
  * @callback SceneTimeslotTimeHourEvent
  * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ * @param {Timeslot} timeslot - Timeslot
  * @param {number} hour - Current hour
  *
  * @callback SceneTimeslotTimeMinuteEvent
  * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ * @param {Timeslot} timeslot - Timeslot
  * @param {number} minute - Current minute
  *
  * @callback SceneTimeslotTimeSecondEvent
+ * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ * @param {Timeslot} timeslot - Timeslot
  * @param {number} second - Current second
  *
  * @callback SceneTimeslotSceneEvent
  * @param {SmartScene} scene - Updated scene
+ * @param {WeekTimeslot} weekTimeslot - Week timeslot
+ * @param {Timeslot} timeslot - Timeslot
  * @param {Scene} scene - Scene target
  *
  * @callback SceneStateEvent
@@ -306,7 +350,11 @@ import SmartScene from "../SmartScene.js";
  * @property {LightPowerupColorModeEvent} light_powerup_color_mode
  * @property {LightPowerupColorEvent} light_powerup_color
  * @property {LightPowerupColorTemperatureEvent} light_powerup_color_temperature
+ * @property {AddSceneEvent} add_scene
+ * @property {DeleteSceneEvent} delete_scene
  * @property {SceneNameEvent} scene_name
+ * @property {SceneActionAddEvent} scene_action_add
+ * @property {SceneActionDeleteEvent} scene_action_delete
  * @property {SceneActionStateEvent} scene_action_state
  * @property {SceneActionBrightnessEvent} scene_action_brightness
  * @property {SceneActionColorTemperatureEvent} scene_action_color_temperature
@@ -324,11 +372,15 @@ import SmartScene from "../SmartScene.js";
  * @property {SceneCurrentTimeslotEvent} scene_current_timeslot
  * @property {SceneCurrentWeekdayEvent} scene_current_weekday
  * @property {SceneCurrentWeekTimeslotEvent} scene_current_week_timeslot
+ * @property {SceneTimeslotAddEvent} scene_week_timeslot_add
+ * @property {SceneTimeslotDeleteEvent} scene_week_timeslot_delete
  * @property {SceneTimeslotTimeHourEvent} scene_week_timeslot_time_hour
  * @property {SceneTimeslotTimeMinuteEvent} scene_week_timeslot_time_minute
  * @property {SceneTimeslotTimeSecondEvent} scene_week_timeslot_time_second
  * @property {SceneTimeslotTimeEvent} scene_week_timeslot_time
  * @property {SceneTimeslotSceneEvent} scene_week_timeslot_scene
+ * @property {SceneWeekTimeslotAddEvent} scene_week_add
+ * @property {SceneWeekTimeslotDeleteEvent} scene_week_delete
  * @property {SceneWeekdaysEvent} scene_week_weekdays
  * @property {SceneStateEvent} scene_state
  * @typedef {EventCallbackInherit & EventCallbackTypes} EventCallback

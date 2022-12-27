@@ -21,6 +21,8 @@ import ExtError from "../lib/error/ExtError.js";
  * @typedef EventCallbackTypes
  * @type {Object}
  * @property {NameEvent} name
+ * @property {import("../lib/SceneAction.js").ActionAddEvent} action_add
+ * @property {import("../lib/SceneAction.js").ActionDeleteEvent} action_delete
  * @property {import("../lib/SceneAction.js").ActionStateEvent} action_state
  * @property {import("../lib/SceneAction.js").ActionBrightnessEvent} action_brightness
  * @property {import("../lib/SceneAction.js").ActionColorTemperatureEvent} action_color_temperature
@@ -28,9 +30,9 @@ import ExtError from "../lib/error/ExtError.js";
  * @property {import("../lib/SceneAction.js").ActionColorEvent} action_color
  * @property {import("../lib/SceneAction.js").ActionColorXYEvent} action_color_xy
  * @property {import("../lib/SceneAction.js").ActionEffectEvent} action_effect
- * @property {import("../lib/Gradient.js").ActionGradientColorEvent} action_gradient_color
- * @property {import("../lib/Gradient.js").ActionGradientColorXYEvent} action_gradient_color_xy
- * @property {import("../lib/Gradient.js").ActionGradientModeEvent} action_gradient_mode
+ * @property {import("../lib/SceneAction.js").ActionGradientColorEvent} action_gradient_color
+ * @property {import("../lib/SceneAction.js").ActionGradientColorXYEvent} action_gradient_color_xy
+ * @property {import("../lib/SceneAction.js").ActionGradientModeEvent} action_gradient_mode
  * @property {import("../lib/SceneAction.js").ActionDuration} action_duration
  * @property {AutoDynamicEvent} auto_dynamic
  * @property {import("../lib/Palette.js").SpeedEvent} speed
@@ -120,6 +122,8 @@ export default class Scene extends Resource
 		this._data.image = data?.metadata?.image?.rid ?? this._data.image;
 		if (data?.auto_dynamic != undefined && this._data.auto_dynamic != data?.auto_dynamic)
 			this.emit("auto_dynamic", this._data.auto_dynamic = data.auto_dynamic);
+		for (const id in this._actions)
+			this._actions[id]._alive = false;
 		data?.actions?.forEach(action =>
 		{
 			light = this._bridge._resources[`${action.target.rtype}/${action.target.rid}`].getOwner?.();
@@ -129,6 +133,14 @@ export default class Scene extends Resource
 				this._actions[light.getID()]._setData(action.action);
 			}
 		})
+		for (const id in this._actions)
+		{
+			if (!this._actions[id]._alive)
+			{
+				this._actions[id]._delete();
+				delete this._actions[id];
+			}
+		}
 		this._palette._setData(data);
 	}
 
@@ -183,6 +195,11 @@ export default class Scene extends Resource
 	once(eventName, listener)
 	{return (super.once(eventName, listener))}
 
+	/**
+	 * Get scene name
+	 *
+	 * @returns {string}
+	 */
 	getName()
 	{
 		if (this.isExists())
@@ -232,6 +249,11 @@ export default class Scene extends Resource
 		return (this);
 	}
 
+	/**
+	 * Get scene image
+	 *
+	 * @returns {string}
+	 */
 	getImage()
 	{return (this._data.image)}
 
