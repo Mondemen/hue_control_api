@@ -18,6 +18,16 @@ import ExtError from "./error/ExtError.js";
  */
 
 /**
+ * @callback ActionAddEvent
+ * @param {Light} light - Light attached to the action
+ *
+ * @callback ActionDeleteEvent
+ * @param {Light} light - Light attached to the action
+ *
+ * @callback ActionStateEvent
+ * @param {Light} light - Light attached to the action
+ * @param {LightService.State[keyof typeof LightService.State]} state - The state of light
+ *
  * @callback ActionStateEvent
  * @param {Light} light - Light attached to the action
  * @param {LightService.State[keyof typeof LightService.State]} state - The state of light
@@ -49,10 +59,34 @@ import ExtError from "./error/ExtError.js";
  * @callback ActionDuration
  * @param {Light} light - Light attached to the action
  * @param {number} duration - The duration of transition
+ *
+ * @callback ActionGradientColorEvent
+ * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
+ * @param {number} i - Index position of color in array
+ * @param {Color} color - The color
+ *
+ * @callback ActionGradientColorXYEvent
+ * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
+ * @param {number} i - Index position of color in array
+ * @param {XYValue} color - The color in XY format
+ *
+ * @callback ActionGradientModeEvent
+ * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
+ * @param {Gradient.Mode[keyof typeof Gradient.Mode]} mode - The mode
  */
 
 export default class SceneAction
 {
+	/**
+	 * @type {boolean}
+	 * @private
+	 */
+	_alive = true;
+	/**
+	 * @type {boolean}
+	 * @private
+	 */
+	_init = false;
 	/**
 	 * @type {Scene}
 	 * @private
@@ -87,43 +121,46 @@ export default class SceneAction
 	 */
 	_setData(data)
 	{
+		this._alive = true;
 		if (data?.on?.on != undefined && this._data?.on?.on != data?.on?.on)
 		{
 			LightData.setState(this._data, data.on.on);
-			this._scene.emit("action_state", this._light, this.getState());
+			this.emit("state", this.getState());
 		}
 		if (data?.dimming?.brightness != undefined && this._data?.dimming?.brightness != data.dimming.brightness)
 		{
 			LightData.setBrightness(this._data, data.dimming.brightness);
-			this._scene.emit("action_brightness", this._light, this.getBrightness());
+			this.emit("brightness", this.getBrightness());
 		}
 		if (data?.color_temperature?.mirek != undefined && this._data?.color_temperature?.mirek != data?.color_temperature?.mirek)
 		{
 			LightData.setColorTemperature(this._data, data.color_temperature.mirek);
-			this._scene.emit("action_color_temperature", this._light, this.getColorTemperature());
-			this._scene.emit("action_color_temperature_mired", this._light, data.color_temperature.mirek);
+			this.emit("color_temperature", this.getColorTemperature());
+			this.emit("color_temperature_mired", data.color_temperature.mirek);
 		}
 		if (data?.color?.xy && (this._data.color?.xy?.x != data?.color?.xy?.x || this._data.color?.xy?.y != data?.color?.xy?.y))
 		{
 			LightData.setColor(this._data, data.color.xy);
-			this._scene.emit("action_color", this._light, this.getColor());
-			this._scene.emit("action_color_xy", this._light, data.color.xy);
+			this.emit("color", this.getColor());
+			this.emit("color_xy", data.color.xy);
 		}
 		if (data?.effects?.effect != undefined && this._data?.effects?.effect != data?.effects?.effect)
 		{
 			LightData.setEffect(this._data, data.effects.effect);
-			this._scene.emit("action_effect", this._light, this.getEffect());
+			this.emit("effect", this.getEffect());
 		}
 		if (data?.dynamics?.duration != undefined && this._data?.dynamics?.duration != data?.dynamics?.duration)
 		{
 			LightData.setDuration(this._data, data.dynamics.duration);
-			this._scene.emit("action_duration", this._light, this.getDuration());
+			this.emit("duration", this.getDuration());
 		}
 		if (data?.gradient)
 		{
-			this._gradient ??= new Gradient(this._scene, this._light);
+			this._gradient ??= new Gradient(this._scene, this);
 			this._gradient._setData(data.gradient);
 		}
+		if (!this._init)
+			this._add();
 	}
 
 	/**
@@ -145,6 +182,27 @@ export default class SceneAction
 			result.action = {...result.action, ...this._gradient._getData()};
 		return (result);
 	}
+
+	/**
+	 * @private
+	 */
+	_add()
+	{
+		this.emit("add");
+		this._init = true;
+	}
+
+	/**
+	 * @private
+	 */
+	_delete()
+	{this.emit("delete")}
+
+	/**
+	 * @private
+	 */
+	emit(eventName, ...args)
+	{this._scene.emit(`action_${eventName}`, this._light, ...args)}
 
 	getLight()
 	{return (this._light)}

@@ -133,7 +133,7 @@ export default class LightService extends Service
 			this._data.effectList = [...data?.effects?.status_values];
 		if (data?.gradient)
 		{
-			this._gradient ??= new Gradient(this);
+			this._gradient ??= new Gradient(this, this);
 			this._gradient._setData(data.gradient);
 		}
 		if (data?.powerup)

@@ -21,20 +21,6 @@ import LightData from "./LightData.js";
  *
  * @callback GradientModeEvent
  * @param {Gradient.Mode[keyof typeof Gradient.Mode]} mode - The mode
- *
- * @callback ActionGradientColorEvent
- * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
- * @param {number} i - Index position of color in array
- * @param {Color} color - The color
- *
- * @callback ActionGradientColorXYEvent
- * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
- * @param {number} i - Index position of color in array
- * @param {XYValue} color - The color in XY format
- *
- * @callback ActionGradientModeEvent
- * @param {ColorBulb|WhiteAndColorBulb} light - Light attached to the action
- * @param {Gradient.Mode[keyof typeof Gradient.Mode]} mode - The mode
  */
 
 export default class Gradient
@@ -62,10 +48,10 @@ export default class Gradient
 	/** @private */
 	_update = {};
 
-	constructor(parent, light)
+	constructor(parent, eventSource)
 	{
 		this._parent = parent;
-		this._light = light;
+		this._eventSource = eventSource;
 	}
 
 	/**
@@ -103,12 +89,7 @@ export default class Gradient
 	}
 
 	emit(eventName, ...args)
-	{
-		if (this._light)
-			this._parent.emit(`action_gradient_${eventName}`, this._light, ...args);
-		else
-			this._parent.emit(`gradient_${eventName}`, ...args);
-}
+	{this._eventSource.emit(`gradient_${eventName}`, ...args)}
 
 	/**
 	 * Sets color and brightness at the index
