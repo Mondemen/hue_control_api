@@ -58,6 +58,7 @@ export default class Resource extends EventEmitter
 		MOTION: "motion",
 		MATTER: "matter",
 		PUBLIC_IMAGE: "public_image",
+		RELATIVE_ROTARY: "relative_rotary",
 		ROOM: "room",
 		SCENE: "scene",
 		SMART_SCENE: "smart_scene",

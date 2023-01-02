@@ -11,6 +11,7 @@ import WhiteBulb from "./light/WhiteBulb.js";
 import Resource from "./Resource.js";
 import BridgeService from "./service/BridgeService.js";
 import ButtonService from "./service/ButtonService.js";
+import RelativeRotaryService from "./service/RelativeRotaryService.js";
 import DevicePowerService from "./service/DevicePowerService.js";
 import GroupedLightService from "./service/GroupedLightService.js";
 import LightLevelService from "./service/LightLevelService.js";
@@ -88,6 +89,7 @@ export default class Bridge extends Device
 			Resource,
 			BridgeService,
 			ButtonService,
+			RelativeRotaryService,
 			DevicePowerService,
 			GroupedLightService,
 			LightLevelService,
@@ -484,6 +486,8 @@ export default class Bridge extends Device
 						service = new ButtonService(this); break;
 					case Resource.Type.GROUPED_LIGHT:
 						service = new GroupedLightService(this); break;
+					case Resource.Type.RELATIVE_ROTARY:
+						service = new RelativeRotaryService(this); break;
 					default:
 						service = new Service(this); break;
 				}
