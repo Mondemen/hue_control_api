@@ -1,0 +1,326 @@
+import { string } from "yup";
+import Group from "../api/group";
+import { PaletteEvents as EventCallbacksPalette } from "../lib/Palette";
+import SceneAction, { SceneActionEvents as EventCallbacksSceneAction } from "../lib/SceneAction";
+import ExtError from "../lib/error/index";
+import Bridge from "./Bridge";
+import Resource, { EventCallbacks as EventCallbacksParent } from "./Resource";
+
+export interface EventCallbacks extends EventCallbacksParent, EventCallbacksSceneAction, EventCallbacksPalette
+{
+	name: (name: string) => void;
+	auto_dynamic: (autoDynamic: boolean) => void;
+}
+
+export default class Scene extends Resource
+{
+	static Image =
+	{
+		BRIGHT: "732ff1d9-76a7-4630-aad0-c8acc499bb0b",
+		CONCENTRATE: "b90c8900-a6b7-422c-a5d3-e170187dbf8c",
+		DIMMED: "8c74b9ba-6e89-4083-a2a7-b10a1e566fed",
+		ENERGIZE: "7fd2ccc5-5749-4142-b7a5-66405a676f03",
+		NIGHTLIGHT: "28bbfeff-1a0c-444e-bb4b-0b74b88e0c95",
+		READ: "e101a77f-9984-4f61-aac8-15741983c656",
+		RELAX: "a1f7da49-d181-4328-abea-68c9dc4b5416",
+		REST: "11a09ad5-8d65-4e90-959b-f05981a9ab1b"
+	} as const;
+
+	static Action =
+	{
+		ACTIVE: "active",
+		DYNAMIC_PALETTE: "dynamic_palette",
+		STATIC: "static"
+	} as const;
+
+	protected _type = Resource.Type.SCENE;
+	private _group: Group;
+	private _actions: Record<string, SceneAction> = {};
+	// private _palette = new Palette(this);
+
+	constructor(bridge?: Bridge, data?: any)
+	{
+		super(bridge, data);
+	}
+
+	[Symbol.for('nodejs.util.inspect.custom')]()
+	{
+		return (
+		{
+			...super[Symbol.for('nodejs.util.inspect.custom')](),
+			group: this._group,
+			actions: this._actions,
+			// palette: this._palette
+		})
+	}
+
+	/**
+	 * Sets data
+	 */
+	_setData(data: any)
+	{
+		// let light: Light;
+
+		super._setData(data);
+		if (data?.metadata?.name !== undefined && this._data.name !== data?.metadata?.name)
+			this.emit("name", this._data.name = data?.metadata?.name);
+		this._data.image = data?.metadata?.image?.rid ?? this._data.image;
+		if (data?.auto_dynamic !== undefined && this._data.auto_dynamic !== data?.auto_dynamic)
+			this.emit("auto_dynamic", this._data.auto_dynamic = data.auto_dynamic);
+		// for (const id in this._actions)
+		// 	this._actions[id].alive = false;
+		// data?.actions?.forEach(action =>
+		// {
+		// 	light = (this._bridge?._resources[`${action.target.rtype}/${action.target.rid}`] as LightService).getOwner?.();
+		// 	if (light)
+		// 	{
+		// 		// this._actions[light.getID()] ??= new SceneAction(this, light);
+		// 		// this._actions[light.getID()]._setData(action.action);
+		// 	}
+		// })
+		// for (const id in this._actions)
+		// {
+		// 	// if (!this._actions[id].alive)
+		// 	// {
+		// 	// 	this._actions[id]._delete();
+		// 	// 	delete this._actions[id];
+		// 	// }
+		// }
+		// this._palette._setData(data);
+	}
+
+	_add()
+	{
+		super._add();
+		this._bridge?.emit("add_scene", this);
+		// this._group?.emit("add_scene", this);
+	}
+
+	_delete()
+	{
+		super._delete();
+		this._bridge?.emit("delete_scene", this);
+		// this._group?.emit("delete_scene", this);
+		// this._group?._deleteScene(this);
+	}
+
+	/**
+	 * Sets the group
+	 */
+	_setGroup(group: Group)
+	{
+		// eslint-disable-next-line no-unsafe-optional-chaining
+		if (group instanceof (this._bridge as Bridge)?.Object.Group)
+			this._group = group;
+	}
+
+	emit<T extends keyof EventCallbacks>(eventName: T, ...args: Parameters<EventCallbacks[T]>)
+	{
+		// if (eventName.includes("event_start"))
+		// 	this._group?._eventStart();
+		this._group?.emit<any>(`scene_${eventName}`, this, ...args);
+		super.emit<any>(eventName, ...args);
+	}
+	on<T extends keyof EventCallbacks>(eventName: T, listener: EventCallbacks[T]) { return (super.on<any>(eventName, listener)) }
+	once<T extends keyof EventCallbacks>(eventName: T, listener: EventCallbacks[T]) { return (super.once<any>(eventName, listener)) }
+	removeAllListeners<T extends keyof EventCallbacks>(eventName: T) { return (super.removeAllListeners<any>(eventName)) }
+
+	/**
+	 * Get scene name
+	 */
+	getName(): string
+	{
+		if (this.isExists())
+			return (this._update.metadata?.name ?? this._data.name)
+		return (this._create.metadata?.name);
+	}
+
+	/**
+	 * Set scene name
+	 */
+	setName(name: string)
+	{
+		let data = (this.isExists()) ? this._update : this._create;
+
+		data.metadata ??= {};
+		data.metadata.name = name;
+		return (this);
+	}
+
+	/**
+	 * Gets if the scene can automatically start dymanic on recall
+	 */
+	isAutoDynamic(): boolean
+	{return (this._update.auto_dynamic ?? this._data.auto_dynamic)}
+
+	/**
+	 * Set scene if the scene recall shoud start dymamic automatically
+	 */
+	setAutoDynamic(autoDynamic: boolean)
+	{
+		let data = (this.isExists()) ? this._update : this._create;
+
+		data.auto_dynamic = autoDynamic;
+		return (this);
+	}
+
+	/**
+	 * Get scene image
+	 */
+	getImage(): typeof Scene.Image[keyof typeof Scene.Image] | string
+	{return (this._data.image)}
+
+	/**
+	 * Set scene image
+	 */
+	setImage(image: typeof Scene.Image[keyof typeof Scene.Image] | string)
+	{
+		image = string().uuid().required().validateSync(image);
+		if (this.isExists())
+			throw new ExtError(1, "Image can be define only during the creation of the scene");
+		this._create.metadata ??= {};
+		this._create.metadata.image ??= {};
+		this._create.metadata.image.rid = image;
+		this._create.metadata.image.rtype = Resource.Type.PUBLIC_IMAGE;
+		return (this);
+	}
+
+	isNative()
+	{return (Object.values(Scene.Image).includes(this.getImage() as typeof Scene.Image[keyof typeof Scene.Image]))}
+
+	getGroup()
+	{return (this._group)}
+
+	// getPalette()
+	// {return (this._palette)}
+
+	// /**
+	//  * Gets action data from light
+	//  */
+	// getAction(light: Light)
+	// {
+	// 	this._actions[light.getID()] ??= new SceneAction(this, light);
+	// 	return (this._actions[light.getID()]);
+	// }
+
+	/**
+	 * Gets the list of actions
+	 */
+	getActions()
+	{return (Object.values(this._actions))}
+
+	async create()
+	{
+		// let actions: SceneAction[];
+		// let colorLight: any, miredLight: any;
+
+		// actions = Object.values(this._actions);
+		// colorLight = actions.find(action => action._data?.color?.xy);
+		// miredLight = actions.find(action => action._data?.color_temperature?.mirek);
+		// if (!this._palette.getColors().length && colorLight)
+		// 	this._palette.addColor(colorLight._data.color.xy, colorLight.getBrightness());
+		// if (!this._palette.getColorTemperature() && miredLight)
+		// 	this._palette.setColorTemperature(miredLight.getColorTemperature(), miredLight.getBrightness());
+		this._create =
+		{
+			type: this._type,
+			...this._create,
+			group:
+			{
+				rid: this._group.getID(),
+				rtype: this._group.getType()
+			},
+			// actions: actions.map(action => action._getData()),
+			// ...this._palette._getData()
+		};
+		await super.create();
+		this._exists = true;
+		// this._group._addScene(this);
+	}
+
+	async delete()
+	{
+		await super.delete();
+		// this._group?._deleteScene(this);
+	}
+
+	async update()
+	{
+		// if (Object.values(this._actions).find(action => action._updated))
+		// 	this._update.actions = Object.values(this._actions).map(action => action._getData());
+		// this._update = {...this._update, ...this._palette._getData()};
+		await super.update();
+	}
+
+	async applyDynamic(brightness: number, transitionTime?: number)
+	{
+		let isExists = this.isExists();
+		let error: any;
+
+		if (!isExists)
+			await this.create();
+		this._update.recall = {action: Scene.Action.DYNAMIC_PALETTE};
+		if (brightness !== undefined)
+			this._update.recall.dimming = {brightness};
+		if (transitionTime !== undefined)
+			this._update.recall.duration = transitionTime;
+		try
+		{await this.update()}
+		catch (err)
+		{error = err}
+		finally
+		{this._update = {}}
+		if (!isExists)
+			await this.delete();
+		if (error)
+			throw error;
+	}
+
+	async applyStatic(brightness: number, transitionTime?: number)
+	{
+		let isExists = this.isExists();
+		let error;
+
+		if (!isExists)
+			await this.create();
+		this._update.recall = {action: Scene.Action.STATIC};
+		if (brightness !== undefined)
+			this._update.recall.dimming = {brightness};
+		if (transitionTime !== undefined)
+			this._update.recall.duration = transitionTime;
+		try
+		{await this.update()}
+		catch (err)
+		{error = err}
+		finally
+		{this._update = {}}
+		if (!isExists)
+			await this.delete();
+		if (error)
+			throw error;
+	}
+
+	async activate(brightness: number, transitionTime?: number)
+	{
+		let isExists = this.isExists();
+		let error;
+
+		if (!isExists)
+			await this.create();
+		this._update.recall = {action: Scene.Action.ACTIVE};
+		if (brightness !== undefined)
+			this._update.recall.dimming = {brightness};
+		if (transitionTime !== undefined)
+			this._update.recall.duration = transitionTime;
+		try
+		{await this.update()}
+		catch (err)
+		{error = err}
+		finally
+		{this._update = {}}
+		if (!isExists)
+			await this.delete();
+		if (error)
+			throw error;
+	}
+}

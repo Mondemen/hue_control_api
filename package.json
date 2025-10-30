@@ -4,7 +4,6 @@
 	"description": "Philips Hue bridge control API in Node.JS ",
 	"main": "src/index.js",
 	"types": "dist",
-	"type": "module",
 	"author": "Mondemen",
 	"license": "MIT",
 	"repository": {
@@ -12,13 +11,28 @@
 		"url": "https://github.com/Mondemen/hue_control_api"
 	},
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"halloween": "tsx watch --clear-screen=false halloween.ts"
 	},
 	"dependencies": {
-		"mdns-js": "^1.0.3"
+		"axios": "^1.13.1",
+		"bezier-easing": "^2.1.0",
+		"bezier-js": "^6.1.4",
+		"bonjour-service": "^1.3.0",
+		"convert": "^5.13.1",
+		"date-fns": "^4.1.0",
+		"node-dtls-client": "^1.1.1",
+		"statuses": "^2.0.2",
+		"yup": "^1.7.1"
 	},
 	"devDependencies": {
-		"typescript": "^4.7.4"
+		"@eslint/js": "^9.38.0",
+		"@types/bezier-js": "^4.1.3",
+		"@types/node": "^24.9.2",
+		"@types/statuses": "^2.0.6",
+		"eslint": "^9.38.0",
+		"tsx": "^4.20.6",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.46.2"
 	},
 	"keywords": [
 		"philips",
